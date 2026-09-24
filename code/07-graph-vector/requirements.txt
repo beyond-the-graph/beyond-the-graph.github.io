@@ -1,0 +1,6 @@
+fastembed==0.4.2
+neo4j==5.28.1
+networkx==3.4.2
+pandas==2.2.3
+plotly==6.1.2
+streamlit==1.64.0

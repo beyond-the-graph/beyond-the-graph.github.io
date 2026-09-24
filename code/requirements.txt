@@ -1,0 +1,9 @@
+fastembed==0.4.2
+folium==0.19.6
+neo4j==5.28.1
+networkx==3.4.2
+pandas==2.2.3
+plotly==6.1.2
+scikit-learn==1.7.1
+scipy==1.15.3
+streamlit==1.64.0

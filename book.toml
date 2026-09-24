@@ -1,0 +1,16 @@
+[book]
+authors = ["Akmal Chaudhri"]
+language = "en"
+src = "src"
+title = "Neo4j Beyond the Graph"
+description = "Seven capabilities of Neo4j explored through seven hands-on use cases."
+
+[output.html]
+hash-files = true
+git-repository-url = "https://github.com/beyond-the-graph/beyond-the-graph.github.io"
+edit-url-template = "https://github.com/beyond-the-graph/beyond-the-graph.github.io/edit/main/{path}"
+no-section-label = true
+
+[output.html.search]
+limit-results = 20
+use-boolean-and = true
