@@ -11,7 +11,7 @@
 
 - [Introduction](part-front/introduction.md)
 
-# Seven Days
+# Main
 
 - [Chapter 1: Native Graph](part-main/01-native-graph.md)
 - [Chapter 2: Full-Text Search](part-main/02-full-text-search.md)
