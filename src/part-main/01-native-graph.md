@@ -103,7 +103,11 @@ for i in range(1, len(path_lines)):
         interchanges.append(path_stations[i])
 ```
 
-The route from Kings Cross St. Pancras to Waterloo covers five stops across two lines, with one interchange. Cypher finds it in milliseconds.
+As shown in Figure 1-1, the route from Kings Cross St. Pancras to Waterloo covers five stops across three lines, with two interchanges. Cypher finds it in milliseconds.
+
+![](01-native-graph-media/image1.png)
+
+*Figure 1-1. Kings Cross to Waterloo.*
 
 One naming note: the dataset uses `"Kings Cross St. Pancras"` without an apostrophe. Passing `"King's Cross St. Pancras"` returns no result -- worth checking if your shortest path queries come back empty.
 
@@ -130,7 +134,11 @@ Note the directed `->` in the pattern -- the bidirectional relationships mean th
 iso_df = iso_df[iso_df["name"] != ISO_ORIGIN].reset_index(drop=True)
 ```
 
-From Oxford Circus at eight hops, the network fans out further west and south than east -- the asymmetry of the Underground's radial structure made visible by the data.
+From Oxford Circus at eight hops, the network fans out further west and south than east -- the asymmetry of the Underground's radial structure made visible by the data, as shown in Figure 1-2.
+
+![](01-native-graph-media/image2.png)
+
+*Figure 1-2. Isochrone Map.*
 
 ### Visualizing the Isochrone
 
