@@ -187,6 +187,12 @@ search_papers("tranformer~")
 
 The notebook includes a `compare_search_modes()` function that runs the same query in both keyword and phrase mode and plots the BM25 scores side by side. This makes the scoring difference concrete: phrase mode scores are generally lower and more selective, while keyword mode casts a wider net with more variance in relevance.
 
+Figure 2-1 shows the score difference for the query `graph neural networks`.
+
+![](02-full-text-search-media/image1.png)
+
+*Figure 2-1. Keyword vs. Phrase Search.*
+
 ### Filtered Search
 
 Full-text search narrows by relevance; structured filters narrow by property. The two compose naturally in Cypher with a `WHERE` clause after the `YIELD`:
@@ -269,6 +275,12 @@ for n in edges_raw["in_nodes"]:
 pos = nx.spring_layout(G, seed=42, k=0.3)
 color_map = {"root": "#EF553B", "cited": "#636EFA", "citing": "#00CC96"}
 ```
+
+Figure 2-2 shows an example citation network.
+
+![](02-full-text-search-media/image2.png)
+
+*Figure 2-2. Citation Network.*
 
 ### The Streamlit App
 
