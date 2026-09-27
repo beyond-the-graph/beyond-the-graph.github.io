@@ -8,16 +8,16 @@ Neo4j's native `date` and `datetime` types are first-class values in Cypher. A `
 
 ## When Would You Reach for It?
 
-Temporal queries in Neo4j earn their place when time is one dimension of a richer graph rather than the only dimension. Pure time series problems -- high-frequency trading data, IoT sensor streams at millisecond resolution -- belong in purpose-built time series databases. But when your time-varying data is connected to other entities that carry meaning, Neo4j handles the combination naturally.
+Temporal queries in Neo4j earn their place when time is one dimension of a richer graph rather than the only dimension. Pure time series problems -- high-frequency trading data, IoT sensor streams at millisecond resolution -- belong in purpose-built time series databases. But when your time-varying data are connected to other entities that carry meaning, Neo4j handles the combination naturally.
 
 Reach for Neo4j's temporal capability when:
 
-- Your time-varying data is connected to other nodes -- issuers, counterparties, events
+- Your time-varying data are connected to other nodes -- issuers, counterparties, events
 - You want to combine date-range queries with graph traversal in a single operation
 - You need date arithmetic -- durations, period comparisons -- as part of a graph query
 - You're already using Neo4j and don't want to add a separate time series store
 
-Financial data is a natural fit: prices are time series, but stocks are connected to each other through shared market behavior and the relationship between two stocks' price histories is itself a meaningful query.
+Financial data are a natural fit: prices are time series, but stocks are connected to each other through shared market behavior and the relationship between two stocks' price histories is itself a meaningful query.
 
 ## The Use Case
 
