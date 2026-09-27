@@ -132,12 +132,6 @@ Note the directed `->` in the pattern -- the bidirectional relationships mean th
 iso_df = iso_df[iso_df["name"] != ISO_ORIGIN].reset_index(drop=True)
 ```
 
-From Oxford Circus at eight hops, the network fans out further west and south than east -- the asymmetry of the Underground's radial structure made visible by the data, as shown in Figure 1-2.
-
-![](01-native-graph-media/image2.png)
-
-*Figure 1-2. Isochrone Map.*
-
 ### Visualizing the Isochrone
 
 Rather than coloring individual station markers by hop count, we compute convex hull polygons for each hop tier and draw them as filled rings on the map. This gives a much cleaner sense of how the reachable area expands stop by stop:
@@ -167,6 +161,12 @@ for hop in sorted(iso_df["hops"].unique(), reverse=True):
 ```
 
 We draw hulls from the outermost hop inward so that inner rings are rendered on top of outer ones. Stations not reachable within the maximum hop count are shown as small grey markers for context.
+
+From Oxford Circus at eight hops, the network fans out further west and south than east -- the asymmetry of the Underground's radial structure made visible by the data, as shown in Figure 1-2.
+
+![](01-native-graph-media/image2.png)
+
+*Figure 1-2. Isochrone Map.*
 
 ### Zone Mismatch Analysis
 
@@ -215,8 +215,9 @@ The CartoDB tile URL uses double curly braces around the Folium template variabl
 
 ```python
 MAP_TILES = (
-    f"https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}.png"
-    f"?key={CARTO_API_KEY}"
+    f"https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}.png?key={CARTO_API_KEY}"
+    if CARTO_API_KEY
+    else "CartoDB positron"
 )
 ```
 
