@@ -45,7 +45,7 @@ The `abstract` and `title` properties are the target for full-text search. The s
 
 ### Prerequisites
 
-The same Aura environment variables as chapter 1. All data are generated in the notebook.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
 
 ### Loading the Graph
 
