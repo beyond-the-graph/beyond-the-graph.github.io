@@ -48,9 +48,7 @@ The graph model is:
 
 ### Prerequisites
 
-The same Aura environment variables as previous chapters, including `NEO4J_DATABASE`. All data is defined in the notebook -- no external files needed.
-
-APOC is available on all Aura tiers. No additional installation is needed.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
 
 ### Storing Metadata
 
