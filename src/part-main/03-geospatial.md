@@ -57,7 +57,7 @@ In addition to the Aura environment variables, you'll need:
 - A CartoDB API key stored as `CARTO_API_KEY`
 - `NEO4J_DATABASE` set -- chapter 3 uses named sessions throughout
 
-**Loading the data.** The repo includes a pre-populated Aura backup file (`aqi_pyrenees.backup`). The fastest way to get started is to import it into your Aura instance directly: open the Aura console, select your instance, go to **...** > **Restore from File** and upload the backup file. Once the import completes, the database is ready and you can skip straight to `03_aqi_geospatial.ipynb`.
+**Loading the data.** The repo includes a pre-populated Aura backup file (`03_aqi_geospatial.backup`). The fastest way to get started is to import it into your Aura instance directly: open the Aura console, select your instance, go to **...** > **Restore from File** and upload the backup file. Once the import completes, the database is ready and you can skip straight to `03_aqi_geospatial.ipynb`.
 
 If you'd prefer to fetch fresh data yourself -- or want to extend the city list -- run `03_aqi_ingest.ipynb` instead. You'll need an additional IQAir API key stored as `IQAIR_API_KEY` and the ingest takes around 20 minutes due to the free-tier rate limit of five requests per minute.
 
