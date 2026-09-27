@@ -156,6 +156,12 @@ price_df["ma_50"] = price_df["close"].rolling(window=50).mean()
 
 The 20-day MA captures short-to-medium term trend; the 50-day MA shows the longer-term direction. We overlay both on the closing price as a three-line chart in Plotly.
 
+Figure 4-2 shows an example using the AAPL symbol.
+
+![](04-temporal-media/image2.png)
+
+*Figure 4-2. AAPL Moving Averages.*
+
 ### Query 4: Best and Worst Performers
 
 The performance query runs entirely in Cypher, using `min()` and `max()` on the date to anchor the first and last price nodes:
@@ -178,12 +184,6 @@ result = session.run("""
 ```
 
 The query anchors on `min(p.date)` and `max(p.date)` rather than literal start and end dates because different symbols may have different first and last trading days in the dataset -- this approach correctly handles any gaps in coverage. The results are displayed as a bar chart of the top 10 and bottom 10 performers, colored green for positive and red for negative returns.
-
-Figure 4-2 shows an example using the AAPL symbol.
-
-![](04-temporal-media/image2.png)
-
-*Figure 4-2. AAPL Moving Averages.*
 
 ### Query 5: Price Correlation
 
