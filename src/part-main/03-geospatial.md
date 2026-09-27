@@ -42,6 +42,12 @@ The graph model is:
 
 `NEIGHBORS` relationships connect cities within 200 km of each other, computed once at ingest time using `point.distance()` in Cypher.
 
+Figure 3-1 shows the corridor at a glance -- green markers indicate Good air quality, yellow Moderate, with marker size reflecting AQI value.
+
+![](03-geospatial-media/image1.png)
+
+*Figure 3-1. Air Quality across the Pyrenees Corridor.*
+
 ## Building the Application
 
 ### Prerequisites
@@ -231,12 +237,6 @@ AQI_COLORS = {
 ```
 
 City markers are sized proportionally to AQI value -- larger circles indicate worse air quality -- and colored by category. The `NEIGHBORS` overlay adds lines between cities, with cross-border pairs within 100 km highlighted distinctly.
-
-Figure 3-1 shows the corridor at a glance -- green markers indicate Good air quality, yellow Moderate, with marker size reflecting AQI value.
-
-![](03-geospatial-media/image1.png)
-
-*Figure 3-1. Air Quality across the Pyrenees Corridor.*
 
 The geospatial notebook also includes an AQI distribution box plot by country, a top-10 cities bar chart colored by AQI category and an AQI vs temperature scatter plot to explore whether temperature correlates with air quality across the corridor.
 
