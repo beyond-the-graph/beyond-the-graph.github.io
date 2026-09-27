@@ -25,7 +25,7 @@ For this chapter we'll build a stock price analysis tool for a curated subset of
 
 ## The Data
 
-We use the S&P 500 historical price dataset from Kaggle, published under CC0 license. The full dataset covers 505 symbols from February 2013 to February 2018. We load a curated subset of 150 symbols across major sectors -- Technology, Financials, Healthcare, Consumer and others -- which keeps the total node count comfortably within Aura's free-tier limit of 200,000 nodes.
+We use the [S&P 500 historical price dataset](https://www.kaggle.com/datasets/camnugent/sandp500) from Kaggle, published under CC0 license. The full dataset covers 505 symbols from February 2013 to February 2018. We load a curated subset of 150 symbols across major sectors -- Technology, Financials, Healthcare, Consumer and others -- which keeps the total node count comfortably within Aura's free-tier limit of 200,000 nodes.
 
 The graph model is:
 
