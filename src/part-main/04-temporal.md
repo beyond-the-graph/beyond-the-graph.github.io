@@ -139,6 +139,12 @@ fig.update_xaxes(
 )
 ```
 
+Figure 4-1 shows an example using the AAPL symbol.
+
+![](04-temporal-media/image1.png)
+
+*Figure 4-1. AAPL Candlestick.*
+
 ### Query 3: Moving Averages
 
 Moving averages are computed in pandas after retrieving the price series from Neo4j. Cypher has no built-in rolling window function and `pandas.Series.rolling()` is both cleaner and faster for this purpose:
@@ -172,6 +178,12 @@ result = session.run("""
 ```
 
 The query anchors on `min(p.date)` and `max(p.date)` rather than literal start and end dates because different symbols may have different first and last trading days in the dataset -- this approach correctly handles any gaps in coverage. The results are displayed as a bar chart of the top 10 and bottom 10 performers, colored green for positive and red for negative returns.
+
+Figure 4-2 shows an example using the AAPL symbol.
+
+![](04-temporal-media/image2.png)
+
+*Figure 4-2. AAPL Moving Averages.*
 
 ### Query 5: Price Correlation
 
