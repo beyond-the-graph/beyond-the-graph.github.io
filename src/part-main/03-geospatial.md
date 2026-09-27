@@ -52,14 +52,13 @@ Figure 3-1 shows the corridor at a glance -- green markers indicate Good air qua
 
 ### Prerequisites
 
-In addition to the Aura environment variables, you'll need:
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
 
-- A CartoDB API key stored as `CARTO_API_KEY`
-- `NEO4J_DATABASE` set -- chapter 3 uses named sessions throughout
+The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now requires a free API key, available at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), stored as `CARTO_API_KEY`. The Streamlit app degrades gracefully if the key is absent, falling back to the default CartoDB Positron tile set.
 
 **Loading the data.** The repo includes a pre-populated Aura backup file (`03_aqi_geospatial.backup`). The fastest way to get started is to import it into your Aura instance directly: open the Aura console, select your instance, go to **...** > **Restore from File** and upload the backup file. Once the import completes, the database is ready and you can skip straight to `03_aqi_geospatial.ipynb`.
 
-If you'd prefer to fetch fresh data yourself -- or want to extend the city list -- run `03_aqi_ingest.ipynb` instead. You'll need an additional IQAir API key stored as `IQAIR_API_KEY` and the ingest takes around 20 minutes due to the free-tier rate limit of five requests per minute.
+If you'd prefer to fetch fresh data yourself -- or want to extend the city list -- run `03_aqi_ingest.ipynb` instead. You'll need an additional IQAir API key stored as `IQAIR_API_KEY` and the ingest takes ~20 minutes due to the IQAir free-tier rate limit of five requests per minute.
 
 ### Storing Coordinates as Points
 
