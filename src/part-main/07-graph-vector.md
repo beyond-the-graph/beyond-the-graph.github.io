@@ -261,6 +261,12 @@ for r in ring_records:
 pos = nx.spring_layout(G, seed=RANDOM_SEED, k=1.0, iterations=100)
 ```
 
+Figure 7-1 shows the detected 3-hop rings -- each cluster of three nodes forms a circular money flow.
+
+![](07-graph-vector-media/image1.png)
+
+*Figure 7-1. 3-hop Fraud Rings.*
+
 ### The Streamlit App
 
 The sidebar has a query type selector -- Pure Graph, Pure Vector, Graph + Vector -- with parameters that adapt to the selection. Pure Graph exposes hop count (3, 4 or 5), min/max amount and a result limit. Pure Vector exposes a query text area, vector candidate count and similarity threshold. Graph + Vector exposes all of the above.
