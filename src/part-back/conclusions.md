@@ -12,7 +12,7 @@ Every notebook runs on Neo4j Aura's free tier. Every application is a working St
 
 The most consistent theme across the seven chapters is that Neo4j's graph model is the foundation, not the ceiling. Full-text search, geospatial indexing, temporal queries, document-style properties and vector similarity are all native capabilities -- not integrations with external systems, not add-ons that require separate infrastructure. They work with Cypher and they work together.
 
-Most Neo4j users never explore beyond the graph. The chapters in this book are an attempt to show what's available when you do.
+Many Neo4j users never explore beyond the graph. The chapters in this book are an attempt to show what's available when you do.
 
 ### The combination is the point
 
@@ -46,6 +46,18 @@ The right question is not "can Neo4j do this?" -- it usually can. The right ques
 
 **Combine graph and vector** when suspicious behavior has both a semantic signature and a structural pattern. Vector search to identify candidates. Graph traversal to validate structure. The combination, in a single Cypher query, is Neo4j's most distinctive capability.
 
+The table below summarizes the specific Neo4j features and functions used in each chapter. It serves as a quick reference for the capabilities covered in this book.
+
+| Chapter | Capability | Key Features |
+| --- | --- | --- |
+| 1 | Native Graph | Node and relationship storage, bidirectional relationships, `shortestPath()`, variable-depth traversal (`*1..n`), `UNWIND` batch operations, uniqueness constraints |
+| 2 | Full-Text Search | Apache Lucene integration, BM25 relevance scoring, keyword/phrase/fuzzy (`~`) search, `FULLTEXT INDEX`, `db.index.fulltext.queryNodes()`, asynchronous index polling |
+| 3 | Geospatial | Native `point` type, `POINT INDEX`, `point.distance()`, composite uniqueness constraints, `elementId()` deduplication, latest-record pattern with `collect()[0]` |
+| 4 | Temporal | Native `date` and `datetime` types, range index on date properties, `date()` filtering, `min()`/`max()` date anchoring |
+| 5 | Document-Style Properties | JSON string property storage, `apoc.convert.fromJsonMap()`, `apoc.convert.toJson()`, `apoc.map.removeKey()`, `ANY()` over deserialized lists, map spread operator |
+| 6 | Vector Search | `VECTOR INDEX`, ANN search, euclidean similarity, `db.index.vector.queryNodes()`, post-filter oversampling (`k * n`), graph-filtered k-NN |
+| 7 | Graph + Vector | Vector search + graph traversal in a single Cypher query, comma-separated `MATCH` for ring detection, `duration.between()` timestamp constraints, dynamic hop count, `DISTINCT` deduplication |
+
 ## What Comes Next
 
 The multi-model database landscape is moving quickly. Neo4j continues to expand product capabilities. APOC continues to grow. The Graph Data Science library adds community detection, centrality algorithms and machine learning pipelines that build directly on the graph model.
@@ -54,6 +66,6 @@ The specific procedures and syntax in this book may evolve. The underlying capab
 
 ## A Final Note
 
-The goal of this book was not to argue that Neo4j should replace every database in your stack. It was to show that if you're already using Neo4j or considering it for a graph use case, you already have access to full-text search, geospatial queries, temporal reasoning, document properties and vector similarity. Combining these capabilities with graph traversal is something no other database does as naturally.
+The goal of this book was not to argue that Neo4j should replace every database in your stack. It was to show that if you're using Neo4j or considering it for a graph use case, you already have access to full-text search, geospatial queries, temporal reasoning, document properties and vector similarity. Combining these capabilities with graph traversal is something no other database does as naturally.
 
 This book is supported with Jupyter notebooks and Streamlit applications. The best way to decide whether any of these capabilities fits your use case is to run the code.
