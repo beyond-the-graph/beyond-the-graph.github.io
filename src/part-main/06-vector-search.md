@@ -38,6 +38,12 @@ The graph model is:
 
 `id` is the zero-based index within the split (0-59999 for train, 0-9999 for test). `split` is `"train"` or `"test"`. `uid` is a globally unique string combining both -- `"train_0"`, `"test_500"` -- and is the uniqueness key. Two items can share the same `id` if they're in different splits. `vector` holds the 784-element list property that the vector index is built on.
 
+Figure 6-1 shows one example from each of the ten clothing categories.
+
+![](06-vector-search-media/image1.png)
+
+*Figure 6-1. Fashion-MNIST Examples.*
+
 ## Building the Application
 
 ### Prerequisites
@@ -142,6 +148,12 @@ X_tsne = tsne.fit_transform(train_images[:60000])
 ```
 
 The resulting scatter plot, colored by class, shows clear clusters for most categories -- trousers and bags are well separated; t-shirts, shirts and pullovers cluster more closely, which matches the visual similarity of those garments. This gives us confidence that the vector index will return meaningful nearest neighbors.
+
+Figure 6-2 shows the result -- most categories form distinct clusters, though t-shirt, shirt and pullover overlap, which matches their visual similarity.
+
+![](06-vector-search-media/image2.png)
+
+*Figure 6-2. t-SNE Projection.*
 
 ### Query 1: k-NN Within the Training Set
 
