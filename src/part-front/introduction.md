@@ -39,10 +39,10 @@ Each chapter follows the same structure:
 - **The use case** -- the specific scenario for that chapter, chosen because it genuinely fits the capability rather than to manufacture a demo
 - **The data** -- the dataset used and why it suits the problem
 - **Building the application** -- a hands-on walkthrough with code, including gotchas we encountered along the way
-- **What you'd hit in production** -- honest notes on limitations, operational considerations and scale
+- **What you'd hit in production** -- notes on limitations, operational considerations and scale
 - **Going further** -- what combining this capability with others unlocks and how it connects to later chapters
 
-Every chapter comes with a Jupyter notebook and a Streamlit application. The notebooks are self-contained and independently runnable. All examples run on Neo4j Aura's free tier, which is sufficient for the datasets used throughout the book.
+Every chapter comes with a Jupyter notebook and a Streamlit application. All examples run on Neo4j Aura's free tier, which is sufficient for the datasets used throughout the book. Chapter 3 is the exception, as the analysis notebook assumes the AQI data are already loaded, either by running the ingest notebook first or by importing the provided backup file.
 
 ## A Note on the Dataset Choices
 
@@ -52,7 +52,9 @@ Where data comes from an external source it's either publicly available under an
 
 ## A Note on Aura
 
-All examples in this book run against Neo4j Aura, the fully managed cloud service. Aura's free tier provides enough storage and compute for every dataset in the book. The connection pattern is the same throughout: set up to four environment variables -- `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE` -- and every notebook connects without further configuration. Not all chapters use a named database; check the prerequisites section of each chapter for the exact variables required.
+All examples in this book run against Neo4j Aura, the fully managed cloud service. Aura's free tier provides enough storage and compute for every dataset in the book. The connection pattern is the same throughout: set four environment variables -- `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE` and every notebook connects without further configuration.
+
+To follow along, you'll need a free Aura account -- sign up at [Get Started for Free](https://console.neo4j.io/graphacademy). The free tier provides enough storage and compute for every dataset in the book.
 
 If you prefer to run Neo4j locally, everything works identically against Neo4j Desktop. The only adjustment is the connection URI and credentials.
 
