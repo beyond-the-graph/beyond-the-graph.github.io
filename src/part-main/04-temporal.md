@@ -39,7 +39,7 @@ The graph model is:
 
 ### Prerequisites
 
-The same Aura environment variables as previous chapters, including `NEO4J_DATABASE`.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
 
 ### Loading the Graph
 
