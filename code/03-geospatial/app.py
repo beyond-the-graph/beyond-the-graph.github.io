@@ -30,8 +30,9 @@ NEO4J_DATABASE = os.environ["NEO4J_DATABASE"]
 CARTO_API_KEY  = os.environ["CARTO_API_KEY"]
 
 MAP_TILES = (
-    f"https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}.png"
-    f"?key={CARTO_API_KEY}"
+    f"https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}.png?key={CARTO_API_KEY}"
+    if CARTO_API_KEY
+    else "CartoDB positron"
 )
 MAP_ATTR = (
     "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>, "
