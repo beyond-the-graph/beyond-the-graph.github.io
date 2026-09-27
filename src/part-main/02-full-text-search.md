@@ -146,7 +146,7 @@ Querying the index uses `db.index.fulltext.queryNodes`. It returns nodes ranked 
 
 ```python
 def search_papers(query: str, top_k: int = 5):
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         results = session.run("""
             CALL db.index.fulltext.queryNodes('paper_fulltext', $search_query)
             YIELD node AS p, score
