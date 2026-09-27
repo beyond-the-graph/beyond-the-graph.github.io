@@ -43,11 +43,9 @@ The same Aura environment variables as previous chapters, including `NEO4J_DATAB
 
 ### Loading the Graph
 
-We clear the database, create a uniqueness constraint on `Stock.symbol` and a range index on `Price.date`, then load in two passes:
+We create a uniqueness constraint on `Stock.symbol` and a range index on `Price.date`, then load in two passes:
 
 ```python
-session.run("MATCH (n) DETACH DELETE n")
-
 session.run("""
     CREATE CONSTRAINT stock_symbol IF NOT EXISTS
     FOR (s:Stock) REQUIRE s.symbol IS UNIQUE
