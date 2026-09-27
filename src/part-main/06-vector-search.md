@@ -48,7 +48,9 @@ Figure 6-1 shows one example from each of the ten clothing categories.
 
 ### Prerequisites
 
-The same Aura environment variables as previous chapters, including `NEO4J_DATABASE`. Fashion-MNIST is fetched automatically via scikit-learn's `fetch_openml`.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
+
+Fashion-MNIST is fetched automatically via scikit-learn's `fetch_openml`.
 
 ### Loading the Data
 
