@@ -2,7 +2,7 @@
 
 ## What Is It?
 
-At its core, Neo4j stores data as nodes and relationships. A node represents an entity -- a station, a person, a product. A relationship connects two nodes and carries a direction and a type -- `CONNECTS_TO`, `AUTHORED`, `PURCHASED`. Both nodes and relationships can hold properties: a station has a name and coordinates, a connection has a travel time and a line name.
+At its core, Neo4j stores data as nodes and relationships. A node represents an entity -- a station, a person, a product. A relationship connects two nodes and carries a direction and a type -- `CONNECTS_TO`, `AUTHORED`, `PURCHASED`. Both nodes and relationships can hold properties: a station has a name and coordinates, a connection has a line name.
 
 This sounds simple, and it is. The power comes from what this model makes natural. In a relational database, finding connections between entities means writing joins -- and the more hops you need to traverse, the more joins you write and the slower the query runs. In Neo4j, traversal is a first-class operation. Following a relationship from one node to another is a constant-time operation regardless of the size of the graph. A query that finds paths three, five or ten hops deep runs in the same fundamental way -- following pointers through the storage engine -- rather than computing a Cartesian product across tables.
 
@@ -49,11 +49,9 @@ The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now req
 
 ### Loading the Graph
 
-We clear the database before each run so the notebook is safe to re-run, create a uniqueness constraint on station name, then load stations and connections:
+We create a uniqueness constraint on station name, then load stations and connections:
 
 ```python
-session.run("MATCH (n) DETACH DELETE n")
-
 session.run("""
     CREATE CONSTRAINT station_name IF NOT EXISTS
     FOR (s:Station) REQUIRE s.name IS UNIQUE
