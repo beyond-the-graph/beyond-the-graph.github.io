@@ -73,7 +73,7 @@ Two Streamlit dashboards display live positions and trend data. The primary demo
 
 ### Real-Time Supply Chain Routing with Neo4j, Snowflake Postgres and Confluent Kafka
 
-[Read Online ↗](https://realtime-supply-chain-routing.github.io)
+[Read Online ↗](https://realtime-supply-chain.github.io)
 
 A supply chain routing demo that combines graph-based route optimization with real-time event streaming. The architecture:
 
