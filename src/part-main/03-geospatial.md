@@ -171,6 +171,12 @@ result = session.run("""
 
 This is spatial and graph combined in one query: the `NEIGHBORS` relationship was built using spatial distance at ingest time, and we traverse it here like any other graph relationship.
 
+Figure 3-2 maps the result. Each line connects a French city to a Spanish city within 100 km, making the corridor structure immediately visible -- the border in the west and the cluster in the east are the most densely connected sections.
+
+![](03-geospatial-media/image2.png)
+
+*Figure 3-2. Cross-Border City Pairs.*
+
 ### Query 3: AQI Gradient Pairs
 
 Which neighboring city pairs have the biggest difference in air quality? Pollution doesn't respect geography -- cities close together can have very different AQI readings:
@@ -225,6 +231,12 @@ AQI_COLORS = {
 ```
 
 City markers are sized proportionally to AQI value -- larger circles indicate worse air quality -- and colored by category. The `NEIGHBORS` overlay adds lines between cities, with cross-border pairs within 100 km highlighted distinctly.
+
+Figure 3-1 shows the corridor at a glance -- green markers indicate Good air quality, yellow Moderate, with marker size reflecting AQI value.
+
+![](03-geospatial-media/image1.png)
+
+*Figure 3-1. Air Quality across the Pyrenees Corridor.*
 
 The geospatial notebook also includes an AQI distribution box plot by country, a top-10 cities bar chart colored by AQI category and an AQI vs temperature scatter plot to explore whether temperature correlates with air quality across the corridor.
 
