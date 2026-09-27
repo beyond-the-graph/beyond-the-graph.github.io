@@ -21,6 +21,10 @@
 - [Chapter 6: Vector Search](part-main/06-vector-search.md)
 - [Chapter 7: Graph + Vector](part-main/07-graph-vector.md)
 
+# Conclusions
+
+- [Conclusions](part-back/conclusions.md)
+
 # Appendix
 
 - [Free Books](part-back/free-books.md)
