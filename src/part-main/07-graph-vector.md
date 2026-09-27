@@ -53,9 +53,9 @@ The graph model is:
 
 ### Prerequisites
 
-In addition to the standard Aura environment variables, this chapter uses `fastembed` for embedding the transaction descriptions.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
 
-fastembed downloads the `BAAI/bge-small-en-v1.5` model (~23 MB) on first use and caches it locally. The model produces 384-dimensional embeddings and runs entirely locally -- no API key required.
+This chapter uses `fastembed` for embedding the transaction descriptions. `fastembed` downloads the `BAAI/bge-small-en-v1.5` model (~23 MB) on first use and caches it locally. The model produces 384-dimensional embeddings and runs entirely locally -- no API key required.
 
 ### Loading the Embedding Model
 
