@@ -64,4 +64,4 @@ All notebooks, Streamlit applications and source code are available at:
 
 [beyond-the-graph.github.io](https://beyond-the-graph.github.io)
 
-Each notebook is self-contained with its own `requirements.txt`. A single combined `requirements.txt` at the repo root installs all dependencies for all chapters at once -- useful if you plan to work through the book from start to finish. You'll need Python 3.12, a virtual environment and classic Jupyter installed locally.
+Each notebook is self-contained and each Streamlit application has its own `requirements.txt`. A single combined `requirements.txt` at the repo root installs all Streamlit dependencies for all chapters at once -- useful if you plan to work through the book from start to finish. You'll need Python 3.12, a virtual environment and classic Jupyter installed locally.
