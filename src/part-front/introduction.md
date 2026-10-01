@@ -42,7 +42,7 @@ Each chapter follows the same structure:
 - **What you'd hit in production** -- notes on limitations, operational considerations and scale
 - **Going further** -- what combining this capability with others unlocks and how it connects to later chapters
 
-Every chapter comes with a Jupyter notebook and a Streamlit application. All examples run on Neo4j Aura's free tier, which is sufficient for the datasets used throughout the book. Chapter 3 is the exception, as the analysis notebook assumes the AQI data are already loaded, either by running the ingest notebook first or by importing the provided backup file.
+Every chapter comes with a Jupyter notebook and a Streamlit application. Chapter 3 is the exception, as the analysis notebook assumes the AQI data are already loaded, either by running the ingest notebook first or by importing the provided backup file.
 
 ## A Note on the Dataset Choices
 
