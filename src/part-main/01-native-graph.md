@@ -107,7 +107,7 @@ As shown in Figure 1-1, the route from Kings Cross St. Pancras to Waterloo cover
 
 *Figure 1-1. Kings Cross to Waterloo.*
 
-One naming note: the dataset uses `"Kings Cross St. Pancras"` without an apostrophe. Passing `"King's Cross St. Pancras"` returns no result -- worth checking if your shortest path queries come back empty.
+One naming note: the dataset uses `"Kings Cross St. Pancras"` without an apostrophe. Passing `"King's Cross St. Pancras"` returns no result -- worth checking if your shortest path queries come back empty. Note also that the route reflects the connections in the dataset rather than the TfL journey planner, which may suggest a different path.
 
 ### Isochrone -- Reachable Stations
 
