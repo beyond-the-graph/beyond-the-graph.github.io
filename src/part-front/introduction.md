@@ -52,9 +52,7 @@ Where data comes from an external source it's either publicly available under an
 
 ## A Note on Aura
 
-All examples in this book run against Neo4j Aura, the fully managed cloud service. Aura's free tier provides enough storage and compute for every dataset in the book. The connection pattern is the same throughout: set four environment variables -- `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE` and every notebook connects without further configuration.
-
-To follow along, you'll need a free Aura account -- sign up at [Get Started for Free](https://console.neo4j.io/graphacademy). The free tier provides enough storage and compute for every dataset in the book.
+All examples in this book run against Neo4j Aura, the fully managed cloud service. Aura's free tier provides enough storage and compute for every dataset in the book. The connection pattern is the same throughout: set four environment variables -- `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE` and every notebook connects without further configuration. To follow along, you'll need a free Aura account -- sign up at [Get Started for Free](https://console.neo4j.io/graphacademy).
 
 If you prefer to run Neo4j locally, everything works identically against Neo4j Desktop. The only adjustment is the connection URI and credentials.
 
