@@ -1,3 +1,9 @@
+<style>
+  html, body { background: #000 !important; color: #fff !important; }
+  a          { color: #2196f3 !important; }
+  img        { filter: none !important; }
+</style>
+
 # Free Books
 
 ### The SingleStore Cookbook: Recipes for Multi-Model, Machine Learning and AI Data Engineering
