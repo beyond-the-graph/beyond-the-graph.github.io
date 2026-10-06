@@ -48,7 +48,7 @@ Every chapter comes with a Jupyter notebook and a Streamlit application. Chapter
 
 Some chapters use real-world data -- London Underground station coordinates, Pyrenees air quality readings from IQAir, S&P 500 price history from Kaggle. Others use synthetic data generated in the notebook itself. In every case the choice was made to give the capability room to show what it can do: a transport network for graph traversal, tightly clustered financial amounts for fraud detection, high-dimensional pixel vectors for image similarity.
 
-Where data comes from an external source it's either publicly available under an open license or generated fresh by running the notebook. Two chapters require free-tier API keys: chapters 1 and 3 use CartoDB basemap tiles for Folium maps and chapter 3 additionally uses the IQAir API for air quality data. Both keys are available on free tiers at [carto.com](https://carto.com/basemaps/apikey/) and [iqair.com](https://www.iqair.com/dashboard/api/).
+Where data comes from an external source it's either publicly available under an open license or generated fresh by running the notebook. Two chapters require free-tier API keys: chapters 1 and 3 use CartoDB basemap tiles for Folium maps and chapter 3 additionally uses the IQAir API for air quality data. Both keys are available on free tiers at [carto.com](https://carto.com/basemaps/apikey/) and [iqair.com](https://www.iqair.com/air-quality-monitors/api).
 
 ## A Note on Aura
 
