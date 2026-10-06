@@ -1,7 +1,9 @@
 <style>
-  html, body { background: #000 !important; color: #fff !important; }
-  a          { color: #2196f3 !important; }
-  img        { filter: none !important; }
+  html, body  { background: #000 !important; color: #fff !important; }
+  h1, h2, h3,
+  h4, h5, h6  { color: #fff !important; }
+  a           { color: #2196f3 !important; }
+  img         { filter: none !important; }
 </style>
 
 # Free Books
