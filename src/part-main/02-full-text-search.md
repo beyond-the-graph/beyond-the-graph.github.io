@@ -27,7 +27,7 @@ For this chapter we'll build a research paper discovery tool. Users can search f
 
 ## The Data
 
-We use the same synthetic 200-paper research dataset from the [Weaviate chapter](https://seven-vector-databases.github.io/part-main/day4-weaviate.html) of *Seven Vector Databases in Seven Days* -- identical fields, venues, author names, abstract templates and random seed -- so the papers are directly comparable across both books. Two things are added that the Weaviate version didn't have: `Author` nodes connected to papers via `AUTHORED` relationships and `CITES` relationships between papers, with a citation bias toward papers in the same or adjacent research fields.
+We use the same synthetic 200-paper research dataset from the [Weaviate chapter](https://seven-vector-databases.github.io/part-main/04-weaviate.html) of *Seven Vector Databases in Seven Days* -- identical fields, venues, author names, abstract templates and random seed -- so the papers are directly comparable across both books. Two things are added that the Weaviate version didn't have: `Author` nodes connected to papers via `AUTHORED` relationships and `CITES` relationships between papers, with a citation bias toward papers in the same or adjacent research fields.
 
 The graph has two node types:
 
