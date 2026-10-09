@@ -1,4 +1,4 @@
-# Neo4j Beyond the Graph
+# Welcome
 
 ## How to Cite This Book
 
