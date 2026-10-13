@@ -1,7 +1,6 @@
 import networkx as nx
 import os
 import plotly.graph_objects as go
-import plotly.io as pio
 import streamlit as st
 
 from neo4j import GraphDatabase
@@ -16,8 +15,6 @@ st.set_page_config(
     layout="wide"
 )
 
-pio.renderers.default = "browser"
-
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -25,6 +22,7 @@ pio.renderers.default = "browser"
 NEO4J_URI      = os.environ["NEO4J_URI"]
 NEO4J_USERNAME = os.environ["NEO4J_USERNAME"]
 NEO4J_PASSWORD = os.environ["NEO4J_PASSWORD"]
+NEO4J_DATABASE = os.environ["NEO4J_DATABASE"]
 
 # ---------------------------------------------------------------------------
 # Neo4j connection
@@ -69,7 +67,7 @@ def run_search(driver, query: str, field: str, min_year: int,
         ORDER BY score DESC
         LIMIT $top_k
     """
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         results = session.run(
             cypher,
             search_query=query,
@@ -82,7 +80,7 @@ def run_search(driver, query: str, field: str, min_year: int,
 
 
 def run_cited_papers(driver, query: str, top_k: int):
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         results = session.run("""
             CALL db.index.fulltext.queryNodes('paper_fulltext', $search_query)
             YIELD node AS p, score
@@ -101,7 +99,7 @@ def run_cited_papers(driver, query: str, top_k: int):
 
 
 def run_citing_papers(driver, query: str, top_k: int):
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         results = session.run("""
             CALL db.index.fulltext.queryNodes('paper_fulltext', $search_query)
             YIELD node AS p, score
@@ -120,7 +118,7 @@ def run_citing_papers(driver, query: str, top_k: int):
 
 
 def run_author_papers(driver, query: str, top_k: int):
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         results = session.run("""
             CALL db.index.fulltext.queryNodes('paper_fulltext', $search_query)
             YIELD node AS p, score
@@ -142,7 +140,7 @@ def run_author_papers(driver, query: str, top_k: int):
 
 
 def run_cocited_papers(driver, query: str, top_k: int):
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         results = session.run("""
             CALL db.index.fulltext.queryNodes('paper_fulltext', $search_query)
             YIELD node AS p, score
@@ -164,7 +162,7 @@ def run_cocited_papers(driver, query: str, top_k: int):
 
 
 def run_citation_network(driver, query: str):
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         top = session.run("""
             CALL db.index.fulltext.queryNodes('paper_fulltext', $search_query)
             YIELD node AS p, score
@@ -197,8 +195,6 @@ def run_citation_network(driver, query: str):
 
 
 def build_citation_figure(root_title, edges_raw):
-    import networkx as nx
-
     G = nx.DiGraph()
     root_id = edges_raw["root_id"]
     root_cc = edges_raw["root_cc"] or 1
@@ -402,7 +398,7 @@ with tab1:
                     height=60 + len(rows) * 50,
                     margin=dict(l=10, r=10, t=40, b=40)
                 )
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig)
 
 # ---------------------------------------------------------------------------
 # Tab 2: Explore
@@ -499,7 +495,4 @@ with tab2:
                 )
 
         if "network_fig" in st.session_state:
-            st.plotly_chart(
-                st.session_state["network_fig"],
-                width="stretch"
-            )
+            st.plotly_chart(st.session_state["network_fig"])
