@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.io as pio
 import streamlit as st
 
 from datetime import date
@@ -16,8 +15,6 @@ st.set_page_config(
     page_icon="📈",
     layout="wide"
 )
-
-pio.renderers.default = "browser"
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -183,7 +180,7 @@ with tab1:
                 yaxis_title="Price (USD)",
                 height=500
             )
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig)
 
 # ---------------------------------------------------------------------------
 # Tab 2: Moving Average
@@ -224,7 +221,7 @@ with tab2:
                 height=480,
                 legend=dict(x=0.01, y=0.99)
             )
-            st.plotly_chart(fig2, width="stretch")
+            st.plotly_chart(fig2)
 
 # ---------------------------------------------------------------------------
 # Tab 3: Performance
@@ -262,7 +259,7 @@ with tab3:
             yaxis_title="Price change (%)",
             height=420
         )
-        st.plotly_chart(fig3, width="stretch")
+        st.plotly_chart(fig3)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -276,8 +273,7 @@ with tab3:
                     "pct_change": "Change (%)"
                 })
                 .reset_index(drop=True),
-                hide_index=True,
-                width="stretch"
+                hide_index=True
             )
         with col2:
             st.markdown("**Bottom 10**")
@@ -290,6 +286,5 @@ with tab3:
                     "pct_change": "Change (%)"
                 })
                 .reset_index(drop=True),
-                hide_index=True,
-                width="stretch"
+                hide_index=True
             )
