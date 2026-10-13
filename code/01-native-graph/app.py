@@ -25,6 +25,7 @@ st.set_page_config(
 NEO4J_URI      = os.environ["NEO4J_URI"]
 NEO4J_USERNAME = os.environ["NEO4J_USERNAME"]
 NEO4J_PASSWORD = os.environ["NEO4J_PASSWORD"]
+NEO4J_DATABASE = os.environ["NEO4J_DATABASE"]
 CARTO_API_KEY  = os.environ.get("CARTO_API_KEY", "")
 
 MAP_TILES = (
@@ -103,7 +104,7 @@ def run_shortest_path(driver, origin, destination):
            [r IN relationships(p) | r.color] AS colors,
            length(p)                         AS hops
     """
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         result = session.run(cypher, origin=origin, dest=destination)
         return result.single()
 
@@ -119,7 +120,7 @@ def run_isochrone(driver, origin, max_hops):
            hops
     ORDER BY hops
     """
-    with driver.session() as session:
+    with driver.session(database=NEO4J_DATABASE) as session:
         result = session.run(cypher, origin=origin)
         df = pd.DataFrame([r.data() for r in result])
     if not df.empty:
@@ -255,7 +256,7 @@ def build_shortest_path_map(record, interchanges, connections_df,
     """
     m.get_root().html.add_child(folium.Element(legend_html))
 
-    return m, path_stations, path_lines, path_hops, interchanges
+    return m
 
 
 def build_isochrone_map(iso_df, iso_origin, origin_lat, origin_lon,
@@ -447,7 +448,7 @@ with tab1:
                             st.write(f"**{station}**")
 
                 # Map
-                m, *_ = build_shortest_path_map(
+                m = build_shortest_path_map(
                     record, interchanges, connections_df,
                     coord_lookup, origin, destination
                 )
@@ -506,4 +507,4 @@ with tab2:
                     .reset_index(name="stations")
                     .rename(columns={"hops": "Stops", "stations": "Stations reached"})
                 )
-                st.dataframe(hop_counts, width="stretch", hide_index=True)
+                st.dataframe(hop_counts, hide_index=True)
