@@ -1,8 +1,6 @@
-import json
 import os
 import pandas as pd
 import plotly.express as px
-import plotly.io as pio
 import streamlit as st
 
 from neo4j import GraphDatabase
@@ -16,8 +14,6 @@ st.set_page_config(
     page_icon="📚",
     layout="wide"
 )
-
-pio.renderers.default = "browser"
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -167,7 +163,7 @@ with st.sidebar:
         height=200,
         margin=dict(l=0, r=0, t=10, b=0)
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig)
 
 # ---------------------------------------------------------------------------
 # Filter items
