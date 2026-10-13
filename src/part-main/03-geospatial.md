@@ -2,11 +2,11 @@
 
 ## What Is It?
 
-Neo4j supports native geospatial data through its `point` type -- a first-class property that stores 2D or 3D coordinates and enables spatial queries directly in Cypher. Rather than computing distances in application code, you can ask the database: which cities are within 150 km of Barcelona? Which cross-border pairs are geographically closest? The answer comes back as a graph traversal, not a table scan.
+Neo4j supports native geospatial data through its `point` type -- a first-class property that stores 2D or 3D coordinates and enables spatial queries directly in Cypher. Rather than computing distances in application code, you can ask the database: which cities are within 150 km of Barcelona? Which cross-border pairs are geographically closest? The answer comes back as nodes you can immediately traverse.
 
-The `point` type integrates with Neo4j's indexing infrastructure. A point index on a property enables efficient spatial range queries and proximity lookups. You create it the same way as any other index and Cypher's spatial functions work against it automatically.
+The `point` type integrates with Neo4j's indexing infrastructure. A point index on a property can speed up spatial range queries and proximity lookups against a fixed point. You create it the same way as any other index. The queries in this chapter compare two stored points after aggregating readings, so they likely don't benefit from it, which is fine at this scale.
 
-What makes this distinctive is the combination with graph structure. Geographic proximity is one kind of relationship between places. But places also have relationships to each other through the network -- neighboring cities, shared air corridors, administrative boundaries. Neo4j lets you query both at once: find all cities within a radius using `point.distance()`, then traverse the pre-computed `NEIGHBORS` graph to explore cross-border connectivity. Both in a single Cypher statement.
+What makes this distinctive is the combination with graph structure. Geographic proximity is one kind of relationship between places. But places also have relationships to each other through the network -- neighboring cities, shared air corridors, administrative boundaries. Neo4j lets you query both with the same language: find cities within a radius using `point.distance()` and traverse the pre-computed `NEIGHBORS` graph to explore cross-border connectivity. The neighbor network is built from spatial distance at ingest time, then queried like any other graph.
 
 ## When Would You Reach for It?
 
@@ -27,20 +27,22 @@ For this chapter we'll explore air quality data along the Pyrenees corridor -- t
 
 ## The Data
 
-Air quality readings come from the IQAir API. A free API key is sufficient -- the free tier allows five requests per minute and the ingest notebook spaces calls 12 seconds apart to stay within that limit.
+Air quality readings come from the IQAir API. A free API key is sufficient -- the free tier allows five requests per minute and the ingest notebook spaces calls 12 seconds apart to stay within that limit. The free tier also caps calls at 500 per day, and one ingest run uses fewer than 100.
 
-Each city produces a `Reading` node with: `aqi_us` (the US AQI value), `aqi_category` (Good through Hazardous), `main_pollutant`, `temperature`, `humidity`, `wind_speed` and `timestamp`.
+Each city produces a `Reading` node with: `aqi_us` (the US AQI value), `aqi_cn` (the Chinese AQI value), `aqi_category` (Good through Hazardous), `main_pollutant`, `temperature`, `pressure`, `humidity`, `wind_speed`, `wind_direction` and `timestamp`.
 
 The graph model is:
 
 ```
 (:City {name, country, state, location})
   -[:HAS_READING]->
-(:Reading {timestamp, aqi_us, aqi_category, main_pollutant,
-           temperature, humidity, wind_speed})
+(:Reading {timestamp, aqi_us, aqi_cn, aqi_category, main_pollutant,
+           temperature, pressure, humidity, wind_speed, wind_direction})
 ```
 
-`NEIGHBORS` relationships connect cities within 200 km of each other, computed once at ingest time using `point.distance()` in Cypher.
+`NEIGHBORS` relationships connect cities within 200 km of each other, computed at ingest time using `point.distance()` in Cypher.
+
+IQAir's city list includes some districts of larger cities, such as several Barcelona neighborhoods. We treat them as cities.
 
 Figure 3-1 shows the corridor at a glance -- green markers indicate Good air quality, yellow Moderate, with marker size reflecting AQI value.
 
@@ -52,11 +54,11 @@ Figure 3-1 shows the corridor at a glance -- green markers indicate Good air qua
 
 ### Prerequisites
 
-You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables. The notebooks and app read `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE`. The geospatial notebook and app also use `CARTO_API_KEY`, and the ingest notebook uses `IQAIR_API_KEY`.
 
-The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now requires a free API key, available at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), stored as `CARTO_API_KEY`. The Streamlit app degrades gracefully if the key is absent, falling back to the default CartoDB Positron tile set.
+The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now requires a free API key, available at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), stored as `CARTO_API_KEY`. The notebook requires the key. The Streamlit app degrades gracefully if it's absent, falling back to the default CartoDB Positron tile set.
 
-**Loading the data.** The repo includes a pre-populated Aura backup file (`03_aqi_geospatial.backup`). The fastest way to get started is to import it into your Aura instance directly: open the Aura console, select your instance, go to **...** > **Restore from File** and upload the backup file. Once the import completes, the database is ready and you can skip straight to `03_aqi_geospatial.ipynb`.
+**Loading the data.** The repo includes a pre-populated Aura backup file (`03_aqi_geospatial.backup`). The fastest way to get started is to import it into your Aura instance directly: open the Aura console, select your instance, go to **...** > **Restore from File** and upload the backup file. Restoring overwrites everything currently in the instance, so use one you're happy to replace. Once the import completes, the database is ready and you can skip straight to `03_aqi_geospatial.ipynb`.
 
 If you'd prefer to fetch fresh data yourself -- or want to extend the city list -- run `03_aqi_ingest.ipynb` instead. You'll need an additional IQAir API key stored as `IQAIR_API_KEY` and the ingest takes ~20 minutes due to the IQAir free-tier rate limit of five requests per minute.
 
@@ -105,9 +107,9 @@ session.run("""
 """, max_km=NEIGHBOR_DISTANCE_KM)
 ```
 
-`elementId(a) < elementId(b)` deduplicates pairs -- without it, every city pair generates two relationships. `MERGE` rather than `CREATE` means running the ingest notebook again won't create duplicate relationships.
+`elementId(a) < elementId(b)` makes each pair appear once and stops a city from pairing with itself -- without it, the query does double the work and creates a zero-distance `NEIGHBORS` relationship from every city to itself. `MERGE` rather than `CREATE` means running the ingest notebook again won't create duplicate relationships.
 
-### Extracting Coordinates from Point Properties
+### Query 1: Latest AQI per City
 
 When reading point properties back in Cypher, we access latitude and longitude with dot notation on the point value:
 
@@ -131,7 +133,7 @@ result = session.run("""
 
 The `collect(r)[0]` pattern retrieves the most recent reading per city by sorting by timestamp descending first, then taking the first element of the collected list. This is a common Neo4j idiom for "latest record per group."
 
-### Query 1: Cities Within Radius
+### Query 2: Cities Within Radius
 
 The proximity query uses `point.distance()` in the `WHERE` clause. The function returns meters, so we divide by 1000 for kilometers:
 
@@ -152,7 +154,7 @@ result = session.run("""
 """, city=city, country=country, radius_km=radius_km)
 ```
 
-### Query 2: Cross-Border Neighbors
+### Query 3: Cross-Border Neighbors
 
 This query traverses the pre-computed `NEIGHBORS` graph to find French-Spanish city pairs, then joins the latest reading for each:
 
@@ -171,18 +173,19 @@ result = session.run("""
            latest_b.aqi_us AS aqi_spain,
            abs(latest_a.aqi_us - latest_b.aqi_us) AS aqi_diff
     ORDER BY distance_km
+    LIMIT 15
 """)
 ```
 
 This is spatial and graph combined in one query: the `NEIGHBORS` relationship was built using spatial distance at ingest time, and we traverse it here like any other graph relationship.
 
-Figure 3-2 maps the result. Each line connects a French city to a Spanish city within 100 km, making the corridor structure immediately visible -- the border in the west and the cluster in the east are the most densely connected sections.
+Figure 3-2 maps the cross-border pairs within 100 km, using a separate query over the same `NEIGHBORS` relationships. Each line connects a French city to a Spanish city, making the corridor structure immediately visible -- the border in the west and the cluster in the east are the most densely connected sections.
 
 ![](03-geospatial-media/image2.png)
 
 *Figure 3-2. Cross-Border City Pairs.*
 
-### Query 3: AQI Gradient Pairs
+### Query 4: AQI Gradient Pairs
 
 Which neighboring city pairs have the biggest difference in air quality? Pollution doesn't respect geography -- cities close together can have very different AQI readings:
 
@@ -199,16 +202,16 @@ result = session.run("""
          n.distance_km AS distance_km,
          latest_a.aqi_us AS aqi_a, latest_b.aqi_us AS aqi_b,
          abs(latest_a.aqi_us - latest_b.aqi_us) AS aqi_diff
-    RETURN city_a, country_a, city_b, country_b,
-           distance_km, aqi_a, aqi_b, aqi_diff
     ORDER BY aqi_diff DESC
     LIMIT 10
+    RETURN city_a, country_a, city_b, country_b,
+           distance_km, aqi_a, aqi_b, aqi_diff
 """)
 ```
 
-### Query 4: Most Connected City
+### Query 5: Most Connected City
 
-Which city has the most neighbors within the corridor? This is the most geographically central city in the network:
+Which city has the most neighbors within the corridor? Neighbor count is a simple proxy for how central a city is in the network:
 
 ```python
 result = session.run("""
@@ -235,9 +238,9 @@ AQI_COLORS = {
 }
 ```
 
-City markers are sized proportionally to AQI value -- larger circles indicate worse air quality -- and colored by category. The `NEIGHBORS` overlay adds lines between cities, with cross-border pairs within 100 km highlighted distinctly.
+City markers are scaled between 6 and 22 pixels by AQI value -- larger circles indicate worse air quality -- and colored by category. The `NEIGHBORS` overlay draws a teal line between each French and Spanish city pair within 100 km.
 
-The geospatial notebook also includes an AQI distribution box plot by country, a top-10 cities bar chart colored by AQI category and an AQI vs temperature scatter plot to explore whether temperature correlates with air quality across the corridor.
+The geospatial notebook also includes an AQI distribution box plot by country, a top-10 cities bar chart colored by AQI category, an AQI vs temperature scatter plot to explore whether temperature correlates with air quality across the corridor and an AQI vs distance scatter plot for the cities around the reference city.
 
 ### The Streamlit App
 
@@ -251,17 +254,19 @@ st.iframe(m._repr_html_(), height=520)
 
 A collapsible data table shows the full results including distance, AQI, category, main pollutant, temperature, humidity and wind speed for each nearby city.
 
+The app reads from the database you restored or ingested, so load the data first, then launch the app with `streamlit run app.py`.
+
 ## What You'd Hit in Production
 
-**API rate limits.** The IQAir free tier allows five requests per minute. The ingest notebook spaces calls 12 seconds apart. If you increase the city list significantly, the ingest run will take proportionally longer. A paid API tier removes the rate limit and allows fetching data for more regions.
+**API rate limits.** The IQAir free tier allows five requests per minute. The ingest notebook spaces calls 12 seconds apart. If you increase the city list significantly, the ingest run will take proportionally longer. A paid API tier raises the rate limit and allows fetching data for more regions.
 
-**Reading accumulation.** The ingest notebook is designed to be run repeatedly -- each run adds a new `Reading` node per city. Over time this builds a time series. The "latest reading" pattern (`ORDER BY r.timestamp DESC ... collect(r)[0]`) retrieves only the most recent reading and is efficient, but the total `Reading` node count will grow with each ingest run. Consider adding a retention policy if you run the ingest daily over a long period.
+**Reading accumulation.** The ingest notebook is designed to be run repeatedly -- each run adds a new `Reading` node per city. Over time this builds a time series. The "latest reading" pattern (`ORDER BY r.timestamp DESC ... collect(r)[0]`) retrieves only the most recent reading and is efficient, but the total `Reading` node count will grow with each ingest run. Consider adding a retention policy if you run the ingest daily over a long period. IQAir's city list can also change between runs, so some cities may have older latest readings than others. The notebook map popups show each reading's timestamp for that reason.
 
 **The database clear cell.** The ingest notebook contains a commented-out cell that clears the database. Run it only on the first run -- subsequent runs should accumulate readings, not start from scratch. The cell is clearly marked and commented out by default.
 
 **Point property access syntax.** The notation `c.location.latitude` and `c.location.longitude` accesses the latitude and longitude components of a point property in Cypher. This is easy to get wrong -- `c.lat` would refer to a separate top-level property named `lat`, which doesn't exist in this model.
 
-**`elementId()` not `id()`.**  Neo4j 5.x deprecated the `id()` function in favor of `elementId()`, which returns a string. The `NEIGHBORS` computation uses `elementId(a) < elementId(b)` for deduplication. If you see deprecation warnings in other queries, check whether they use `id()` and update them.
+**`elementId()` not `id()`.** Newer versions of Neo4j deprecate the `id()` function in favor of `elementId()`, which returns a string. The `NEIGHBORS` computation uses `elementId(a) < elementId(b)` for deduplication. If you see deprecation warnings in other queries, check whether they use `id()` and update them.
 
 ## Going Further
 
