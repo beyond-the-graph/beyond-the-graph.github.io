@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import plotly.graph_objects as go
-import plotly.io as pio
 import streamlit as st
 
 from collections import Counter
@@ -19,8 +18,6 @@ st.set_page_config(
     page_icon="👗",
     layout="wide"
 )
-
-pio.renderers.default = "browser"
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -241,7 +238,7 @@ if "results" in st.session_state:
         fig_grid = render_image_grid(
             query_id, query_split, label, results, train_raw, test_raw
         )
-        st.plotly_chart(fig_grid, width="stretch")
+        st.plotly_chart(fig_grid)
 
         # Category breakdown chart
         cat_counts = Counter(r["label"] for r in results)
@@ -257,12 +254,11 @@ if "results" in st.session_state:
             height=300,
             margin=dict(t=40, b=40)
         )
-        st.plotly_chart(fig_bar, width="stretch")
+        st.plotly_chart(fig_bar)
 
         # Results table
         with st.expander("Full results table"):
             st.dataframe(
                 pd.DataFrame(results),
-                hide_index=True,
-                width="stretch"
+                hide_index=True
             )
