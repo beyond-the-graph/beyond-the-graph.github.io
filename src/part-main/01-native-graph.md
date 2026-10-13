@@ -23,19 +23,19 @@ A simple parent-child hierarchy or a single join doesn't justify the switch. But
 
 ## The Use Case
 
-For this chapter we'll build a London Underground route explorer. Given any two stations, find the shortest path between them -- the minimum number of stops and the sequence of line changes. Given a starting station, find all stations reachable within a given number of stops and visualize the spread of the network from that point. And surface a structural curiosity of the network: stations in the same fare zone that require surprisingly long journeys between them and stations in adjacent fare zones that are only one or two stops apart.
+For this chapter we'll build a London Underground route explorer. Given any two stations, find the shortest path between them -- the minimum number of stops and the line changes along one such route. Given a starting station, find all stations reachable within a given number of stops and visualize the spread of the network from that point. And surface a structural curiosity of the network: stations in the same fare zone that require surprisingly long journeys between them and stations in adjacent fare zones that are only one or two stops apart.
 
 The Underground is a natural fit for the graph model. Stations are nodes. Connections between adjacent stations on the same line are relationships. The line name and color are properties on each relationship. The network topology -- which station connects to which, and how -- is exactly what the data are about.
 
 ## The Data
 
-We use three CSV files from the publicly available London Underground dataset:
+We use three CSV files from the publicly available London Underground dataset (which also includes some DLR and Tramlink stations):
 
 - `london_stations.csv` -- stations with names, coordinates and zone information
 - `london_connections.csv` -- direct connections between adjacent stations
 - `london_lines.csv` -- line names and hex color codes
 
-Before loading, we merge line colors onto the connections and filter stations down to only those that appear in at least one connection. The graph we load into Neo4j has `Station` nodes and bidirectional `CONNECTS_TO` relationships between adjacent stations. Each station carries its name, latitude, longitude and zone. Each connection carries the line name and the line color.
+Before loading, we merge line colors onto the connections and filter stations down to only those that appear in at least one connection. The graph we load into Neo4j has `Station` nodes and bidirectional `CONNECTS_TO` relationships between adjacent stations. Each station carries its name, latitude, longitude, zone and postcode. Each connection carries the line name and the line color.
 
 One preprocessing detail: zone values in the raw data are sometimes composite strings like `"3,4,5,6"` for stations that straddle multiple zones. We keep these as-is on the node but filter them out when running zone-based analysis by matching only stations whose zone field is a single integer.
 
@@ -43,9 +43,9 @@ One preprocessing detail: zone values in the raw data are sometimes composite st
 
 ### Prerequisites
 
-You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables. The notebook reads five of them: `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`, `NEO4J_DATABASE` and `CARTO_API_KEY`. It also clears the target database before loading, so point it at an instance you're happy to wipe.
 
-The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now requires a free API key, available at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), stored as `CARTO_API_KEY`. The Streamlit app degrades gracefully if the key is absent, falling back to the default CartoDB Positron tile set.
+The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now requires a free API key, available at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), stored as `CARTO_API_KEY`. The notebook requires the key. The Streamlit app degrades gracefully if it's absent, falling back to the default CartoDB Positron tile set.
 
 ### Loading the Graph
 
@@ -60,21 +60,22 @@ session.run("""
 session.run("""
     UNWIND $rows AS row
     MERGE (s:Station {name: row.name})
-    SET s.lat  = row.lat,
-        s.lon  = row.lon,
-        s.zone = row.zone
-""", rows=station_rows)
+    SET s.lat      = toFloat(row.lat),
+        s.lon      = toFloat(row.lon),
+        s.zone     = row.zone,
+        s.postcode = row.postcode
+""", rows=station_records)
 
 session.run("""
     UNWIND $rows AS row
-    MATCH (a:Station {name: row.from_station})
-    MATCH (b:Station {name: row.to_station})
+    MATCH (a:Station {name: row.from_name})
+    MATCH (b:Station {name: row.to_name})
     MERGE (a)-[:CONNECTS_TO {line: row.line, color: row.color}]->(b)
     MERGE (b)-[:CONNECTS_TO {line: row.line, color: row.color}]->(a)
-""", rows=connection_rows)
+""", rows=conn_records)
 ```
 
-We create bidirectional `CONNECTS_TO` relationships because tube trains run in both directions. This keeps the Cypher for shortest path simple -- no need to handle directionality in the query.
+We create bidirectional `CONNECTS_TO` relationships because tube trains run in both directions. The isochrone query relies on this, since it follows relationships in one direction only. The shortest path query matches in either direction, so it works either way.
 
 ### Shortest Path
 
@@ -101,13 +102,13 @@ for i in range(1, len(path_lines)):
         interchanges.append(path_stations[i])
 ```
 
-As shown in Figure 1-1, the route from Kings Cross St. Pancras to Waterloo covers five stops across three lines, with two interchanges. Cypher finds it in milliseconds.
+As shown in Figure 1-1, the route from Kings Cross St. Pancras to Waterloo covers five stops across three lines, with two interchanges. Cypher returns it from a single query.
 
 ![](01-native-graph-media/image1.png)
 
 *Figure 1-1. Kings Cross to Waterloo.*
 
-One naming note: the dataset uses `"Kings Cross St. Pancras"` without an apostrophe. Passing `"King's Cross St. Pancras"` returns no result -- worth checking if your shortest path queries come back empty. Note also that the route reflects the connections in the dataset rather than the TfL journey planner, which may suggest a different path.
+One naming note: the dataset uses `"Kings Cross St. Pancras"` without an apostrophe. Passing `"King's Cross St. Pancras"` returns no result -- worth checking if your shortest path queries come back empty. Note also that the route reflects the connections in the dataset rather than the TfL journey planner, which may suggest a different path. Also, `shortestPath()` minimizes the number of stops, not the number of line changes. When several routes tie, Cypher returns one of them, so another route of the same length with fewer changes may exist.
 
 ### Isochrone -- Reachable Stations
 
@@ -134,7 +135,7 @@ iso_df = iso_df[iso_df["name"] != ISO_ORIGIN].reset_index(drop=True)
 
 ### Visualizing the Isochrone
 
-Rather than coloring individual station markers by hop count, we compute convex hull polygons for each hop tier and draw them as filled rings on the map. This gives a much cleaner sense of how the reachable area expands stop by stop:
+As well as coloring each station marker by hop count, we compute convex hull polygons for each hop tier and draw them as nested filled areas on the map. This gives a much cleaner sense of how the reachable area expands stop by stop:
 
 ```python
 from scipy.spatial import ConvexHull
@@ -160,7 +161,7 @@ for hop in sorted(iso_df["hops"].unique(), reverse=True):
         ).add_to(m)
 ```
 
-We draw hulls from the outermost hop inward so that inner rings are rendered on top of outer ones. Stations not reachable within the maximum hop count are shown as small grey markers for context.
+We draw hulls from the outermost hop inward so that inner tiers are rendered on top of outer ones. Stations not reachable within the maximum hop count are shown as small grey markers for context. A bar chart of stations reached per hop shows how the network fans out stop by stop.
 
 From Oxford Circus at eight hops, the network fans out further west and south than east -- the asymmetry of the Underground's radial structure made visible by the data, as shown in Figure 1-2.
 
@@ -195,13 +196,15 @@ zone_stations = stations_df[
 zone_stations["ZoneInt"] = zone_stations["Zone"].astype(int)
 ```
 
-The same batch query runs for cross-zone pairs: stations in adjacent zones sampled from the same pool. The cross-zone results that have two or fewer hops are the counterintuitive ones -- stations that TfL prices differently but which are physically one stop apart.
+The same batch query runs for cross-zone pairs: stations in adjacent zones sampled from the same pool. The cross-zone results that have two or fewer hops are the counterintuitive ones -- stations that TfL prices differently but which are only one or two stops apart.
 
 We visualize same-zone pairs as a box plot of hop counts per zone, which shows that zones further from the centre have wider distributions -- more variance in how far apart same-zone stations actually are on the network. Cross-zone anomalies are mapped as teal lines connecting station pairs that are very close on the network but on opposite sides of a zone boundary.
 
 ### The Streamlit App
 
-The Streamlit application has two tabs. The Shortest Path tab lets users pick any two stations from dropdown menus, displays a summary of stops, lines and interchanges, and renders the route on a Folium map with each segment colored by tube line. The Isochrone tab lets users pick a starting station and a maximum stop count, then renders the convex hull rings on a Folium map alongside a table of reachable station counts by hop.
+The Streamlit application has two tabs. The Shortest Path tab lets users pick any two stations from dropdown menus, displays a summary of stops, lines and interchanges, and renders the route on a Folium map with each segment colored by tube line. The Isochrone tab lets users pick a starting station and a maximum stop count (one to eight) from a slider, then renders the convex hull areas and hop-colored station markers on a Folium map, with a table of reachable station counts by hop in an expander below it.
+
+The app reads the graph from Neo4j, so run the notebook first to load it. It also reads the CSV files from the `data/` directory for the station list and map coordinates, so launch it from the chapter directory with `streamlit run app.py`.
 
 The zone mismatch analysis is notebook-only -- it involves sampling, batching and chart types that work better in a notebook context than in an interactive app.
 
@@ -227,7 +230,7 @@ The double braces prevent Python's f-string parser from treating `{s}`, `{z}`, `
 
 **Graph algorithms beyond shortest path.** Cypher's `shortestPath()` finds the minimum-hop path, which is all this dataset supports. Weighted shortest path -- minimizing journey time rather than stop count -- requires travel time data on each connection and the Graph Data Science library, available on paid Aura tiers or self-hosted deployments. For the Underground, hop count is a reasonable proxy for journey time given the network's regularity, but for sparser or more varied networks weighted traversal would give meaningfully different results.
 
-**Convex hull edge cases.** The `scipy.spatial.ConvexHull` computation fails if fewer than three points are available for a given hop tier. The notebook wraps it in a try-except, which is the right approach. In production you'd want to log these cases -- a single-point or two-point tier is worth knowing about.
+**Convex hull edge cases.** `scipy.spatial.ConvexHull` needs at least three points that don't all lie on one line. The notebook checks for three or more points and wraps the call in a try-except to catch degenerate geometry such as collinear points. Because each tier is cumulative, tiers here always hold several stations, but in production you'd want to log whatever the except branch swallows.
 
 **Zone composite strings.** Several stations have zone values like `"3,4,5,6"` that require filtering before zone-based analysis. This is a data quality quirk specific to this dataset, but it's a reminder that real-world graph data rarely arrives perfectly clean. The regex `r"^\d+$"` cleanly separates single-integer zones from composite ones.
 
