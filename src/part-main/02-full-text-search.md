@@ -37,15 +37,15 @@ The graph has two node types:
 And two relationship types:
 
 - `(Author)-[:AUTHORED]->(Paper)`
-- `(Paper)-[:CITES]->(Paper)` -- with citations biased toward same-field or adjacent-field papers and only toward papers with lower IDs (older papers)
+- `(Paper)-[:CITES]->(Paper)` -- with citations biased toward same-field or adjacent-field papers and only toward papers with lower IDs. Each paper draws between one and six citations and duplicates are dropped. IDs aren't tied to years, so a cited paper can be more recent than the citing one
 
-The `abstract` and `title` properties are the target for full-text search. The structured fields -- `field`, `year`, `citation_count` -- serve as filters.
+The `abstract` and `title` properties are the target for full-text search. The structured fields -- `field`, `year`, `citation_count` -- serve as filters. The generator draws titles from a small set of templates, so a few papers share an identical title. They're still distinct nodes, with different venues, years and citation counts.
 
 ## Building the Application
 
 ### Prerequisites
 
-You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables. The notebook reads four of them: `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE`. It also clears the target database before loading, so point it at an instance you're happy to wipe. Every chapter's notebook does this, so running this one removes the graph from any earlier chapter.
 
 ### Loading the Graph
 
@@ -57,7 +57,7 @@ constraints = session.run("SHOW CONSTRAINTS YIELD name RETURN name").data()
 for con in constraints:
     session.run(f"DROP CONSTRAINT {con['name']} IF EXISTS")
 
-# Drop all non-system indexes
+# Drop all non-lookup indexes
 indexes = session.run(
     "SHOW INDEXES YIELD name, type WHERE type <> 'LOOKUP' RETURN name"
 ).data()
@@ -76,6 +76,20 @@ while True:
 ```
 
 A simple `MATCH (n) DETACH DELETE n` works for small graphs but can time out on Aura when there are many nodes. The batched approach is safer and worth using as a habit.
+
+Before loading, we create uniqueness constraints on `paper_id` and on the author `name`. They guarantee one node per paper and per author and speed up the `MERGE` and `MATCH` lookups in the loading queries:
+
+```python
+session.run("""
+    CREATE CONSTRAINT paper_id IF NOT EXISTS
+    FOR (p:Paper) REQUIRE p.paper_id IS UNIQUE
+""")
+
+session.run("""
+    CREATE CONSTRAINT author_name IF NOT EXISTS
+    FOR (a:Author) REQUIRE a.name IS UNIQUE
+""")
+```
 
 We then load in three passes -- papers, authors and authorship, citations:
 
@@ -152,6 +166,7 @@ def search_papers(query: str, top_k: int = 5):
             YIELD node AS p, score
             RETURN p.title          AS title,
                    p.field          AS field,
+                   p.venue          AS venue,
                    p.year           AS year,
                    p.citation_count AS citation_count,
                    score
@@ -185,7 +200,7 @@ search_papers('"graph neural networks"')
 search_papers("tranformer~")
 ```
 
-The notebook includes a `compare_search_modes()` function that runs the same query in both keyword and phrase mode and plots the BM25 scores side by side. This makes the scoring difference concrete: phrase mode scores are generally lower and more selective, while keyword mode casts a wider net with more variance in relevance.
+The notebook includes a `compare_search_modes()` function that runs the same query in both keyword and phrase mode and plots the BM25 scores side by side. This makes the scoring difference concrete: phrase mode scores are generally lower and more selective, while keyword mode casts a wider net with more variance in relevance. Each mode returns its top eight results, so a missing bar means the paper fell outside that mode's top eight, not that it doesn't match.
 
 Figure 2-1 shows the score difference for the query `graph neural networks`.
 
@@ -195,14 +210,19 @@ Figure 2-1 shows the score difference for the query `graph neural networks`.
 
 ### Filtered Search
 
-Full-text search narrows by relevance; structured filters narrow by property. The two compose naturally in Cypher with a `WHERE` clause after the `YIELD`:
+Full-text search matches by text and ranks by relevance; structured filters narrow by property. The two compose naturally in Cypher with a `WHERE` clause after the `YIELD`:
 
 ```python
 cypher = f"""
     CALL db.index.fulltext.queryNodes('paper_fulltext', $search_query)
     YIELD node AS p, score
     {where_clause}
-    RETURN p.title, p.field, p.year, p.citation_count, score
+    RETURN p.title          AS title,
+           p.field          AS field,
+           p.venue          AS venue,
+           p.year           AS year,
+           p.citation_count AS citation_count,
+           score
     ORDER BY score DESC
     LIMIT $top_k
 """
@@ -222,8 +242,12 @@ session.run("""
     YIELD node AS p, score
     WITH p, score ORDER BY score DESC LIMIT 1
     MATCH (p)-[:CITES]->(cited:Paper)
-    RETURN p.title AS source_title, cited.title AS cited_title,
-           cited.field AS cited_field, cited.citation_count AS cited_citations
+    RETURN p.title               AS source_title,
+           score                 AS source_score,
+           cited.title          AS cited_title,
+           cited.field          AS cited_field,
+           cited.year           AS cited_year,
+           cited.citation_count AS cited_citations
     ORDER BY cited.citation_count DESC
     LIMIT $top_k
 """, search_query=query, top_k=top_k)
@@ -249,14 +273,16 @@ WHERE other <> p
 MATCH (citing:Paper)-[:CITES]->(p)
 MATCH (citing)-[:CITES]->(cocited:Paper)
 WHERE cocited <> p
-WITH p, cocited, count(citing) AS shared_citations
-RETURN cocited.title, shared_citations
+WITH p, score, cocited, count(citing) AS shared_citations
+RETURN p.title AS source_title, cocited.title AS cocited_title, shared_citations
 ORDER BY shared_citations DESC
 ```
 
+In this synthetic dataset each paper cites only a few others, so shared-citation counts are small (mostly one or two) and the co-cited results are noisy. A real citation graph gives a much stronger signal.
+
 ### Citation Network Visualization
 
-The citation network around a top result is visualized as an interactive Plotly graph. The top-scoring paper is the red central node. Blue nodes are papers it cites (outgoing edges). Green nodes are papers that cite it (incoming edges). Node size reflects citation count.
+The citation network around a top result is visualized as an interactive Plotly graph. The top-scoring paper is the red central node. Blue nodes are papers it cites (outgoing edges). Green nodes are papers that cite it (incoming edges). Node size reflects citation count, capped at 300 citations.
 
 The network is built with NetworkX and rendered with Plotly:
 
@@ -288,7 +314,9 @@ The application has two tabs. The Search tab accepts a query string and exposes 
 
 The Explore tab runs a search and then applies one of four traversal types: Papers it cites, Papers that cite it, Other work by same authors, Co-cited papers. A "Show citation network" button below the traversal results builds and displays the red-blue-green citation network graph.
 
-Both tabs use `st.session_state` to persist results across re-runs. The Explore tab also clears the cached network figure when a new search is run, so the graph doesn't show stale results from a previous query.
+The Explore tab uses `st.session_state` to persist its results and the citation network across re-runs, and it clears the cached network figure when a new search is run, so the graph doesn't show stale results from a previous query. The Search tab renders its results directly, so they clear when any widget changes.
+
+The app reads the graph and the full-text index from Neo4j, so run the notebook first to load the graph and create the index, then launch the app with `streamlit run app.py`.
 
 ## What You'd Hit in Production
 
@@ -297,6 +325,8 @@ Both tabs use `st.session_state` to persist results across re-runs. The Explore 
 **Query syntax errors.** A malformed Lucene query -- an unmatched quote, a reserved character like `+` or `!` without escaping -- throws an exception. The app should sanitize user input or wrap the query call in a try-except before passing it to `db.index.fulltext.queryNodes`.
 
 **Fuzzy matching cost.** Fuzzy queries with `~` scan a wider set of index terms and are slower than exact term queries. For interactive search over 200 papers this is imperceptible, but for millions of documents you'd want to set an explicit edit distance (`~1` or `~2`) rather than relying on the default.
+
+**Analyzers and stop words.** Neo4j's default full-text analyzer is `standard-no-stop-words`, so common words such as "and" and "for" are indexed and searchable. A query like `attention mechanisms and transformer architectures` therefore also matches papers that contain only "and", with very low scores, as the filtered example in the notebook shows. If that matters for your data, choose a different analyzer when you create the index or trim common words from queries.
 
 **The `query` parameter.** This is worth repeating because it's easy to hit and the error message isn't immediately obvious: never use `query` as a Cypher parameter name when using the Neo4j Python driver. It conflicts with the driver's own keyword argument for the Cypher string. Use `search_query` or any other name.
 
