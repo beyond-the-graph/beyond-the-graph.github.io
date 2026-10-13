@@ -2,7 +2,6 @@ import folium
 import os
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.io as pio
 import streamlit as st
 
 from neo4j import GraphDatabase
@@ -17,8 +16,6 @@ st.set_page_config(
     layout="wide"
 )
 
-pio.renderers.default = "browser"
-
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -27,7 +24,7 @@ NEO4J_URI      = os.environ["NEO4J_URI"]
 NEO4J_USERNAME = os.environ["NEO4J_USERNAME"]
 NEO4J_PASSWORD = os.environ["NEO4J_PASSWORD"]
 NEO4J_DATABASE = os.environ["NEO4J_DATABASE"]
-CARTO_API_KEY  = os.environ["CARTO_API_KEY"]
+CARTO_API_KEY  = os.environ.get("CARTO_API_KEY", "")
 
 MAP_TILES = (
     f"https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}.png?key={CARTO_API_KEY}"
@@ -325,7 +322,7 @@ if "nearby" in st.session_state:
             height=max(300, len(nearby) * 28),
             margin=dict(l=10, r=10, t=40, b=40)
         )
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig)
 
         # Data table
         with st.expander("Full results table"):
@@ -335,15 +332,10 @@ if "nearby" in st.session_state:
                     "aqi_us", "aqi_category", "main_pollutant",
                     "temperature", "humidity", "wind_speed"
                 ]].reset_index(drop=True),
-                width="stretch",
                 hide_index=True
             )
     else:
         st.info(f"No cities found within {radius_km} km with AQI >= {min_aqi}.")
-        ref_row_df = pd.DataFrame([{
-            "lat": ref_lat, "lon": ref_lon,
-            "aqi_us": ref_aqi, "aqi_category": ref_category
-        }])
         m = build_map(
             ref_city, ref_country, ref_lat, ref_lon,
             ref_aqi, ref_category,
