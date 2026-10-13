@@ -2,11 +2,11 @@
 
 ## What Is It?
 
-Neo4j node properties support primitive types -- strings, integers, floats, booleans, dates -- and arrays of primitives. Nested maps are not supported as native property values. To store heterogeneous, document-style metadata alongside graph structure, the standard approach is to serialize it as a JSON string and parse it back at query time using APOC's `apoc.convert.fromJsonMap()` function.
+Neo4j node properties support primitive types -- strings, integers, floats, booleans, dates -- and arrays of primitives. Nested maps are not supported as native property values. To store heterogeneous, document-style metadata alongside graph structure, a common approach is to serialize it as a JSON string and parse it back at query time using APOC's `apoc.convert.fromJsonMap()` function.
 
-This is a deliberate constraint rather than an oversight. Neo4j's query engine is optimized for traversal and deeply nested document structures are better handled at the edge between the database and the application rather than inside the graph query itself. The sweet spot is: store rich, variable-structure metadata as a JSON string on the node; use APOC to deserialize it inside Cypher when you need to query or mutate it; promote frequently filtered fields to top-level properties with their own indexes.
+Nested structure doesn't fit the property model, and deeply nested documents are usually better handled at the edge between the database and the application than inside the graph query itself. The sweet spot is: store rich, variable-structure metadata as a JSON string on the node; use APOC to deserialize it inside Cypher when you need to query or mutate it; promote frequently filtered fields to top-level properties with their own indexes.
 
-APOC (Awesome Procedures On Cypher) is Neo4j's standard extension library, available on all Aura tiers. It provides `apoc.convert.fromJsonMap()` to parse a JSON string into a Cypher map, `apoc.convert.toJson()` to serialize a map back to a string and `apoc.map.removeKey()` to delete a field from a map without touching the rest.
+APOC (Awesome Procedures On Cypher) is Neo4j's standard extension library, and a subset of APOC Core is pre-installed on Aura. It provides `apoc.convert.fromJsonMap()` to parse a JSON string into a Cypher map, `apoc.convert.toJson()` to serialize a map back to a string and `apoc.map.removeKey()` to delete a field from a map without touching the rest.
 
 ## When Would You Reach for It?
 
@@ -23,7 +23,7 @@ Libraries, product catalogs and content management systems are all cases where s
 
 ## The Use Case
 
-For this chapter we'll build a small library inventory system with three item types -- books, journals and multimedia -- each carrying a different metadata structure in the same `metadata` property on `Item` nodes. We demonstrate how to query across the three types using APOC, how to traverse the graph to join items with their authors and publishers and how to add and remove fields from stored metadata without rewriting the whole object.
+For this chapter we'll build a small library inventory system with three item types -- books, journals and multimedia -- each carrying a different metadata structure in the same `metadata` property on `Item` nodes. We demonstrate how to query across the three types using APOC, how to traverse the graph to join items with their authors and publishers and how to add and remove fields from stored metadata without re-specifying the whole object.
 
 ## The Data
 
@@ -60,14 +60,24 @@ ITEMS = [
      "publisher_id": 1,
      "metadata": {"isbn": "978-0-123456-47-2", "pages": 320,
                   "language": "English", "author_id": 1}},
-    {"id": 6, "title": "Nature Reviews",     "item_type": "journal",
-     "publisher_id": 2,
-     "metadata": {"volume": 12, "year": 2023, "editor": "Dr. Smith",
-                  "articles": ["AI in Medicine", "CRISPR 2024", "Climate Models"]}},
-    {"id": 11, "title": "Deep Learning DVD", "item_type": "multimedia",
-     "publisher_id": 3,
-     "metadata": {"format": "DVD", "duration_min": 145, "language": "English",
-                  "contributors": {"director": "Ana Lima", "narrator": "Tom Chen"}}},
+    {"id": 6, "title": "Journal of Advanced Robotics - Vol 12",
+     "item_type": "journal", "publisher_id": 2,
+     "metadata": {"volume": 12, "year": 2022, "editor": "Dr. Helen Moritz",
+                  "articles": ["Autonomous Drones in Urban Spaces",
+                               "Swarm Intelligence in Rescue Missions",
+                               "Adaptive Control in Humanoid Robots",
+                               "Robot Learning from Demonstration"]}},
+    {"id": 11, "title": "Ocean Deep - A Documentary",
+     "item_type": "multimedia", "publisher_id": 3,
+     "metadata": {"format": "DVD", "duration_min": 92, "language": "English",
+                  "contributors": {"narrator": "David Stone",
+                                   "director": "Lisa Wong",
+                                   "editor": "James Patel"}}},
+]
+
+items_for_neo4j = [
+    {**item, "metadata": json.dumps(item["metadata"])}
+    for item in ITEMS
 ]
 
 session.run("""
@@ -75,11 +85,29 @@ session.run("""
     MERGE (i:Item {id: row.id})
     SET i.title     = row.title,
         i.item_type = row.item_type,
-        i.metadata  = row.metadata_json
-""", rows=[{**item, "metadata_json": json.dumps(item["metadata"])} for item in ITEMS])
+        i.metadata  = row.metadata
+    WITH i, row
+    MATCH (p:Publisher {id: row.publisher_id})
+    MERGE (p)-[:PUBLISHED]->(i)
+""", rows=items_for_neo4j)
 ```
 
-We pass the metadata as a JSON string so it's stored as a single string property. All three item types use the same `metadata` property name -- the structure varies but the storage pattern is uniform.
+We pass the metadata as a JSON string so it's stored as a single string property. All three item types use the same `metadata` property name -- the structure varies but the storage pattern is uniform. We also create uniqueness constraints on `id` for `Author`, `Publisher` and `Item`, which keeps the `MERGE` statements safe to re-run. The same statement links each item to its publisher.
+
+The `AUTHORED` relationships come from the metadata itself. Books carry an `author_id` key, so we parse it with APOC during the load and use it to find the author:
+
+```python
+session.run("""
+    MATCH (i:Item)
+    WHERE i.item_type = 'book'
+    WITH i, apoc.convert.fromJsonMap(i.metadata) AS meta
+    WHERE meta.author_id IS NOT NULL
+    MATCH (a:Author {id: meta.author_id})
+    MERGE (a)-[:AUTHORED]->(i)
+""")
+```
+
+After this step the relationship, not the JSON key, is what queries should follow.
 
 ### APOC: Parsing Metadata in Cypher
 
@@ -182,11 +210,11 @@ result = session.run("""
 """, keyword=KEYWORD)
 ```
 
-The list comprehension `[article IN meta.articles WHERE article CONTAINS $keyword]` returns only the matching article titles, not the full list. Both `ANY()` and list comprehensions work on deserialized APOC maps just as they work on native Cypher lists.
+The list comprehension `[article IN meta.articles WHERE article CONTAINS $keyword]` returns only the matching article titles, not the full list. Both `ANY()` and list comprehensions work on deserialized APOC maps just as they work on native Cypher lists. Note that `CONTAINS` is case-sensitive, so a keyword of `AI` doesn't match `ai`.
 
 ### Query 6: Adding a Field to Metadata
 
-To add a key to the stored metadata, parse the JSON string, extend the map using Cypher's map spread operator, then serialize back:
+To add a key to the stored metadata, parse the JSON string, extend the map using a Cypher map projection, then serialize back:
 
 ```python
 session.run("""
@@ -196,7 +224,7 @@ session.run("""
 """)
 ```
 
-The `meta {.*, edition: 'Second'}` syntax creates a new map containing all existing keys (`.*`) plus the new `edition` key. `apoc.convert.toJson()` serializes it back to a string. The original `metadata` property is replaced with the updated JSON string.
+The `meta {.*, edition: 'Second'}` map projection creates a new map containing all existing keys (`.*`) plus the new `edition` key. `apoc.convert.toJson()` serializes it back to a string. The original `metadata` property is replaced with the updated JSON string.
 
 ### Query 7: Removing a Field from Metadata
 
@@ -212,6 +240,8 @@ session.run("""
 
 `apoc.map.removeKey(meta, 'language')` returns a new map without the `language` key. The result is serialized back to JSON and stored. The round-trip -- parse, modify, serialize -- is the standard mutation pattern for JSON string properties in Neo4j.
 
+Queries 6 and 7 change the stored data. Afterward, `The Quantum Garden` has an `edition` key and no `language`, which is why the app shows N/A for its language. Re-running the notebook starts from a clean database and resets it.
+
 ### The Streamlit App
 
 The app is a single-screen layout with a sidebar. The sidebar has a type filter (All, Book, Journal, Multimedia), a keyword search input and a bar chart showing the count of items by type. The main area displays matching items as cards, with a type badge, title, publisher and type-specific metadata rendered by a `render_metadata()` function that handles each item type separately:
@@ -220,7 +250,7 @@ The app is a single-screen layout with a sidebar. The sidebar has a type filter 
 - Journals -- editor, volume, year, article count, expandable article list
 - Multimedia -- format, duration, language, expandable contributors dict
 
-The keyword search runs client-side against the already-loaded item data, searching across titles, metadata fields (language, format, editor, ISBN) and article titles for journals.
+The keyword search runs client-side against the already-loaded item data, searching across titles, author names, metadata fields (language, format, editor, ISBN) and article titles for journals. The search is case-insensitive, unlike the Cypher `CONTAINS` in Query 5.
 
 ## What You'd Hit in Production
 
@@ -228,9 +258,9 @@ The keyword search runs client-side against the already-loaded item data, search
 
 **Frequently filtered fields.** If you find yourself filtering by a metadata field in every query -- `WHERE meta.language = 'English'` -- that field should be a top-level node property with its own index. The rule is: if you filter by it, promote it; if you just retrieve it, leave it in the JSON string.
 
-**APOC availability.** APOC is available on all Aura tiers. If you're running a self-hosted Neo4j deployment, APOC must be explicitly installed and enabled. Check `CALL apoc.help('convert')` to confirm it's available before relying on it.
+**APOC availability.** A subset of APOC Core is pre-installed on Aura, and the three functions used in this chapter are part of it. If you're running a self-hosted Neo4j deployment, APOC must be explicitly installed and enabled. Check `CALL apoc.help('convert')` to confirm it's available before relying on it.
 
-**Mutation is a round-trip.** Adding or removing a metadata field requires parsing the JSON string, modifying the map and serializing it back -- three APOC function calls per mutation. For bulk updates across many nodes this can be slow. If metadata mutations are frequent, consider whether some fields should be top-level properties instead.
+**Mutation is a round-trip.** Adding or removing a metadata field requires parsing the JSON string, modifying the map and serializing it back -- two or three APOC function calls per mutation. For bulk updates across many nodes the cost adds up. Because each mutation rewrites the whole string, two concurrent updates to different keys can also overwrite each other. If metadata mutations are frequent, consider whether some fields should be top-level properties instead.
 
 **Nested map depth.** The multimedia `contributors` map is one level deep inside the `metadata` map -- two levels total. You can go deeper, but each additional level of nesting makes the Cypher harder to write and the mutations more complex. Keep nesting shallow where possible.
 
@@ -238,4 +268,4 @@ The keyword search runs client-side against the already-loaded item data, search
 
 Document-style properties let nodes carry rich, structured metadata without requiring that metadata to have its own place in the graph. The book's edition details, the journal's article list and the multimedia item's contributors all live as JSON strings on the `Item` node, parsed by APOC when needed.
 
-But all the metadata we've worked with so far -- titles, ISBNs, article names -- is symbolic. It carries meaning through its words and structure. Chapter 6 introduces a different way of representing meaning: embedding text and images as high-dimensional vectors, where proximity in the vector space corresponds to semantic similarity. Instead of searching by keyword, you search by content -- and the database finds the nearest neighbors in a space it was trained to understand. That's vector search and it's where we go next.
+But all the metadata we've worked with so far -- titles, ISBNs, article names -- is symbolic. It carries meaning through its words and structure. Chapter 6 introduces a different way of representing meaning: embedding text and images as high-dimensional vectors, where proximity in the vector space corresponds to semantic similarity. Instead of searching by keyword, you search by content -- and the database finds the nearest neighbors in a space the embedding model learned. That's vector search and it's where we go next.
