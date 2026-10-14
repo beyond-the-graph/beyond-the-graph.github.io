@@ -4,7 +4,7 @@
 
 A vector index stores high-dimensional numerical representations of data and answers a different kind of question from the ones we've asked so far. Not "find items where this field equals that value" but "find items that are most similar to this one." Similarity is measured by distance in vector space -- items whose vectors are close together are considered similar, regardless of whether they share any explicit property values.
 
-Neo4j supports native vector indexes with approximate nearest neighbor (ANN) search, enabling fast similarity queries directly in Cypher. You create the index on a list property that holds the vector, call `db.index.vector.queryNodes()` to retrieve the k nearest neighbors, and compose the result with any further Cypher -- graph traversal, property filters, aggregations -- in the same statement.
+Neo4j supports native vector indexes with approximate nearest neighbor (ANN) search, enabling fast similarity queries directly in Cypher. You create the index on a list property that holds the vector, call `db.index.vector.queryNodes()` to retrieve the k nearest neighbors and compose the result with any further Cypher -- graph traversal, property filters, aggregations -- in the same statement.
 
 The key word is approximate. ANN search trades a small amount of recall for a large gain in speed. For most real-world similarity use cases -- find me items that look like this one, find documents semantically similar to this query -- approximate results are close enough to exact results to serve the purpose.
 
@@ -213,7 +213,7 @@ result = session.run("""
 """, k=K * 3, vector=query_vector)
 ```
 
-In our run the post-filter left a single test-set neighbor, and it's a dress like the query, which suggests the pixel vectors carry across the train/test split. Because test items are so few in the index, a larger candidate count is needed to see more than one or two of them.
+In our run the post-filter left a single test-set neighbor and it's a dress like the query, which suggests the pixel vectors carry across the train/test split. Because test items are so few in the index, a larger candidate count is needed to see more than one or two of them.
 
 ### Query 4: Graph-Filtered k-NN
 
@@ -229,7 +229,7 @@ result = session.run("""
 """, k=K * 10, vector=query_vector, category="dress")
 ```
 
-We fetch `k * 10` candidates so that enough remain after the category filter. This is a post-filter pattern -- the vector index searches all 70,000 items and finds the approximate nearest neighbors globally, then the graph traversal filters to the target category. Here the target is the query's own category, so most of the candidates survive and 10x is plenty. A category unlike the query could leave few or no rows, and a larger multiplier wouldn't always rescue it.
+We fetch `k * 10` candidates so that enough remain after the category filter. This is a post-filter pattern -- the vector index searches all 70,000 items and finds the approximate nearest neighbors globally, then the graph traversal filters to the target category. Here the target is the query's own category, so most of the candidates survive and 10x is plenty. A category unlike the query could leave few or no rows and a larger multiplier wouldn't always rescue it.
 
 This pattern -- vector search then graph filter -- is the foundation of what chapter 7 builds into a full fraud detection system.
 
@@ -257,4 +257,4 @@ Results persist in `st.session_state` across re-runs so the display doesn't disa
 
 Vector search finds similar items by distance in vector space. Graph traversal finds connected items by relationship. In this chapter we combined them: a vector search followed by a graph filter in a single Cypher statement. That combination is powerful, but both steps still ran independently -- the vector search found candidates globally, then the graph reduced them.
 
-Chapter 7 tightens the integration. We use vector search to find semantically suspicious transactions, then use graph traversal to confirm whether those transactions form a circular money flow -- a fraud ring. The vector component identifies candidates the graph component couldn't find alone; the graph component validates structure the vector component can't see. That's the full combination, and it's where this book ends up.
+Chapter 7 tightens the integration. We use vector search to find semantically suspicious transactions, then use graph traversal to confirm whether those transactions form a circular money flow -- a fraud ring. The vector component identifies candidates the graph component couldn't find alone; the graph component validates structure the vector component can't see. That's the full combination and it's where this book ends up.

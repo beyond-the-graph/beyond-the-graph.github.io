@@ -4,7 +4,7 @@
 
 At its core, Neo4j stores data as nodes and relationships. A node represents an entity -- a station, a person, a product. A relationship connects two nodes and carries a direction and a type -- `CONNECTS_TO`, `AUTHORED`, `PURCHASED`. Both nodes and relationships can hold properties: a station has a name and coordinates, a connection has a line name.
 
-This sounds simple, and it is. The power comes from what this model makes natural. In a relational database, finding connections between entities means writing joins -- and the more hops you need to traverse, the more joins you write and the slower the query runs. In Neo4j, traversal is a first-class operation. Following a relationship from one node to another is a constant-time operation regardless of the size of the graph. A query that finds paths three, five or ten hops deep runs in the same fundamental way -- following pointers through the storage engine -- rather than computing a Cartesian product across tables.
+This sounds simple and it is. The power comes from what this model makes natural. In a relational database, finding connections between entities means writing joins -- and the more hops you need to traverse, the more joins you write and the slower the query runs. In Neo4j, traversal is a first-class operation. Following a relationship from one node to another is a constant-time operation regardless of the size of the graph. A query that finds paths three, five or ten hops deep runs in the same fundamental way -- following pointers through the storage engine -- rather than computing a Cartesian product across tables.
 
 Cypher, Neo4j's query language, makes this traversal natural to express. A pattern like `(a)-[:CONNECTS_TO*1..5]->(b)` reads almost like English: find any path from `a` to `b` using `CONNECTS_TO` relationships, up to five hops deep. The same question in SQL requires a recursive CTE, a depth cap, careful deduplication and considerably more thought.
 
@@ -202,7 +202,7 @@ We visualize same-zone pairs as a box plot of hop counts per zone, which shows t
 
 ### The Streamlit App
 
-The Streamlit application has two tabs. The Shortest Path tab lets users pick any two stations from dropdown menus, displays a summary of stops, lines and interchanges, and renders the route on a Folium map with each segment colored by tube line. The Isochrone tab lets users pick a starting station and a maximum stop count (one to eight) from a slider, then renders the convex hull areas and hop-colored station markers on a Folium map, with a table of reachable station counts by hop in an expander below it.
+The Streamlit application has two tabs. The Shortest Path tab lets users pick any two stations from dropdown menus, displays a summary of stops, lines and interchanges and renders the route on a Folium map with each segment colored by tube line. The Isochrone tab lets users pick a starting station and a maximum stop count (one to eight) from a slider, then renders the convex hull areas and hop-colored station markers on a Folium map, with a table of reachable station counts by hop in an expander below it.
 
 The app reads the graph from Neo4j, so run the notebook first to load it. It also reads the CSV files from the `data/` directory for the station list and map coordinates, so launch it from the chapter directory with `streamlit run app.py`.
 

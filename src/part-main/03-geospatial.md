@@ -27,7 +27,7 @@ For this chapter we'll explore air quality data along the Pyrenees corridor -- t
 
 ## The Data
 
-Air quality readings come from the IQAir API. A free API key is sufficient -- the free tier allows five requests per minute and the ingest notebook spaces calls 12 seconds apart to stay within that limit. The free tier also caps calls at 500 per day, and one ingest run uses fewer than 100.
+Air quality readings come from the IQAir API. A free API key is sufficient -- the free tier allows five requests per minute and the ingest notebook spaces calls 12 seconds apart to stay within that limit. The free tier also caps calls at 500 per day and one ingest run uses fewer than 100.
 
 Each city produces a `Reading` node with: `aqi_us` (the US AQI value), `aqi_cn` (the Chinese AQI value), `aqi_category` (Good through Hazardous), `main_pollutant`, `temperature`, `pressure`, `humidity`, `wind_speed`, `wind_direction` and `timestamp`.
 
@@ -54,7 +54,7 @@ Figure 3-1 shows the corridor at a glance -- green markers indicate Good air qua
 
 ### Prerequisites
 
-You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables. The notebooks and app read `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE`. The geospatial notebook and app also use `CARTO_API_KEY`, and the ingest notebook uses `IQAIR_API_KEY`.
+You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables. The notebooks and app read `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE`. The geospatial notebook and app also use `CARTO_API_KEY` and the ingest notebook uses `IQAIR_API_KEY`.
 
 The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now requires a free API key, available at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), stored as `CARTO_API_KEY`. The notebook requires the key. The Streamlit app degrades gracefully if it's absent, falling back to the default CartoDB Positron tile set.
 
@@ -177,7 +177,7 @@ result = session.run("""
 """)
 ```
 
-This is spatial and graph combined in one query: the `NEIGHBORS` relationship was built using spatial distance at ingest time, and we traverse it here like any other graph relationship.
+This is spatial and graph combined in one query: the `NEIGHBORS` relationship was built using spatial distance at ingest time and we traverse it here like any other graph relationship.
 
 Figure 3-2 maps the cross-border pairs within 100 km, using a separate query over the same `NEIGHBORS` relationships. Each line connects a French city to a Spanish city, making the corridor structure immediately visible -- the border in the west and the cluster in the east are the most densely connected sections.
 

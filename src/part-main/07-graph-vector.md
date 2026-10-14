@@ -10,7 +10,7 @@ The result is a fraud detection system with three operational modes. Pure graph 
 
 ## When Would You Reach for It?
 
-The graph + vector combination earns its place when your fraud signal has two components: semantic content (what a transaction is described as) and structural position (who sent it and to whom, and how those accounts are connected). Either component alone produces noise. Together they produce signal.
+The graph + vector combination earns its place when your fraud signal has two components: semantic content (what a transaction is described as) and structural position (who sent it and to whom and how those accounts are connected). Either component alone produces noise. Together they produce signal.
 
 Reach for this pattern when:
 
@@ -83,7 +83,7 @@ We call `embed_model.embed([text])` with a list and take the first result. This 
 
 ### Loading the Graph
 
-We load accounts first, then embed and load transactions in batches of 500. The embedding step dominates the load time for 50,000 transactions, and how long it takes depends on your hardware:
+We load accounts first, then embed and load transactions in batches of 500. The embedding step dominates the load time for 50,000 transactions and how long it takes depends on your hardware:
 
 ```python
 def embed_and_load_batch(session, batch):
@@ -169,7 +169,7 @@ Three filters work together to eliminate coincidental rings:
 
 One Cypher detail: the patterns inside a single `MATCH` are separated by commas. Writing them one after another without a comma is a syntax error.
 
-The same structure extends naturally for 4-hop and 5-hop rings by adding one more account and transaction to the pattern. In SQL you'd add one more self-join per hop, or write a recursive CTE with a depth cap and path tracking, and both get harder to read and tune as the rings grow.
+The same structure extends naturally for 4-hop and 5-hop rings by adding one more account and transaction to the pattern. In SQL you'd add one more self-join per hop, or write a recursive CTE with a depth cap and path tracking and both get harder to read and tune as the rings grow.
 
 ### Query 2: Pure Vector Search
 
@@ -198,7 +198,7 @@ The vector search returns transactions whose descriptions are semantically simil
 
 ### Query 3: Graph + Vector Combined
 
-The combined query runs vector search first, then immediately extends into graph traversal in the same Cypher statement. The suspicious transaction must itself be the first hop of a ring: it leaves its source account, and the receiving account's onward transfers lead back to the source:
+The combined query runs vector search first, then immediately extends into graph traversal in the same Cypher statement. The suspicious transaction must itself be the first hop of a ring: it leaves its source account and the receiving account's onward transfers lead back to the source:
 
 ```python
 result = session.run(f"""
@@ -252,7 +252,7 @@ result = session.run("""
 """)
 ```
 
-With the amount range and timestamp filters applied, this query returns 13 detected 3-hop rings, all 13 confirmed as planted fraud. That 100% precision comes with the territory on synthetic data: every ring is flagged as fraud, and in this dataset the filters leave no legitimate cycles. The ring summary is a full graph scan and is slow enough that it's better as a batch analytical query than an interactive one.
+With the amount range and timestamp filters applied, this query returns 13 detected 3-hop rings, all 13 confirmed as planted fraud. That 100% precision comes with the territory on synthetic data: every ring is flagged as fraud and in this dataset the filters leave no legitimate cycles. The ring summary is a full graph scan and is slow enough that it's better as a batch analytical query than an interactive one.
 
 ### Ring Visualization
 
@@ -289,9 +289,9 @@ All results persist in `st.session_state` across re-runs. The embedding model is
 
 **The `query` parameter conflict.** The Neo4j Python driver reserves `query` as a keyword argument for the Cypher string itself. Never use `query` as a parameter name in your Cypher parameters. Use `search_query`, `embedding`, `q` or any other name. This applies everywhere in the codebase, not just chapter 7.
 
-**Ring summary performance.** The ring summary query scans the full transaction graph. Its cost grows with the number of transactions and the hop count. For production workloads you'd run this as a scheduled batch job rather than on demand, and consider creating additional indexes to speed up the traversal.
+**Ring summary performance.** The ring summary query scans the full transaction graph. Its cost grows with the number of transactions and the hop count. For production workloads you'd run this as a scheduled batch job rather than on demand and consider creating additional indexes to speed up the traversal.
 
-**The `max_amount` filter.** Legitimate transactions go up to $50,000, so without the upper-bound filter (`amount <= 9999`) the pattern matches far more coincidental cycles, and the time filter then has to reject each one. The ceiling removes most of them early. It isn't an arbitrary threshold -- it's grounded in the dataset design. In a real system you'd tune this threshold empirically based on the known amount distribution of your fraud cases.
+**The `max_amount` filter.** Legitimate transactions go up to $50,000, so without the upper-bound filter (`amount <= 9999`) the pattern matches far more coincidental cycles and the time filter then has to reject each one. The ceiling removes most of them early. It isn't an arbitrary threshold -- it's grounded in the dataset design. In a real system you'd tune this threshold empirically based on the known amount distribution of your fraud cases.
 
 **Timestamp storage.** Timestamps are stored here as ISO strings and parsed with `datetime()` inside every query. Storing them as native `datetime` values, as chapter 4 does for dates, avoids the repeated parsing and makes time arithmetic and indexing simpler.
 
@@ -299,6 +299,6 @@ All results persist in `st.session_state` across re-runs. The embedding model is
 
 This chapter closes the arc the book has been tracing. We started with the graph model in chapter 1 -- stations, connections, traversal. We added capability by capability: text search, spatial queries, temporal data, document properties, vector similarity. Chapter 7 combines the last two into something that neither a graph query nor a vector query does alone.
 
-The fraud detection system in this chapter is a demonstration, not a production deployment. A real system would need continuous ingestion, a real-time embedding pipeline, alerting thresholds calibrated against labeled historical data and human review of flagged cases. But the core pattern -- vector search to identify candidates, graph traversal to validate structure -- is a sound architecture for this class of problem, and Neo4j is a natural database to run it on.
+The fraud detection system in this chapter is a demonstration, not a production deployment. A real system would need continuous ingestion, a real-time embedding pipeline, alerting thresholds calibrated against labeled historical data and human review of flagged cases. But the core pattern -- vector search to identify candidates, graph traversal to validate structure -- is a sound architecture for this class of problem and Neo4j is a natural database to run it on.
 
 That's Neo4j beyond the graph.

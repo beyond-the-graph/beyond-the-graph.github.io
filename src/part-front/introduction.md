@@ -56,7 +56,7 @@ All examples in this book run against Neo4j Aura, the fully managed cloud servic
 
 To follow along, you'll need a free Aura account -- sign up at [Get Started for Free](https://console.neo4j.io/graphacademy).
 
-If you prefer to run Neo4j locally, the examples work against Neo4j Desktop with minor adjustments: the connection URI and credentials, and the APOC plugin for chapter 5.
+If you prefer to run Neo4j locally, the examples work against Neo4j Desktop with minor adjustments: the connection URI and credentials and the APOC plugin for chapter 5.
 
 ## Code and Notebooks
 

@@ -112,7 +112,7 @@ result = session.run("""
 """, symbol=SYMBOL, start=START_DATE, end=END_DATE)
 ```
 
-The Neo4j driver returns `date` values as its own `neo4j.time.Date` objects, not Python's `datetime.date`, and pandas can't convert them directly. To use them as a pandas datetime index for resampling, convert through strings with `pd.to_datetime(df["date"].astype(str))`.
+The Neo4j driver returns `date` values as its own `neo4j.time.Date` objects, not Python's `datetime.date` and pandas can't convert them directly. To use them as a pandas datetime index for resampling, convert through strings with `pd.to_datetime(df["date"].astype(str))`.
 
 ### Query 2: Candlestick Chart
 
@@ -136,7 +136,7 @@ ohlc_df = (
 )
 ```
 
-Each bucket takes the opening price of the first day, the closing price of the last day and the high and low across the entire window. Because the buckets are calendar days, a 5-day bucket holds at most five trading days, and often three or four. The `.dropna()` step removes empty buckets, which occur at small bucket sizes -- a 1-day bucket that falls on a weekend, for example.
+Each bucket takes the opening price of the first day, the closing price of the last day and the high and low across the entire window. Because the buckets are calendar days, a 5-day bucket holds at most five trading days and often three or four. The `.dropna()` step removes empty buckets, which occur at small bucket sizes -- a 1-day bucket that falls on a weekend, for example.
 
 Plotting with Plotly's `go.Candlestick` requires one formatting choice: set `type="category"` on the x-axis. Without it, Plotly treats the date axis as continuous and can leave gaps wherever a weekend or holiday removed a bucket, which is most visible at small bucket sizes. With `type="category"`, each bucket is an equal-width column regardless of the calendar gap:
 
@@ -156,7 +156,7 @@ Figure 4-1 shows an example using the AAPL symbol.
 
 ### Query 3: Moving Averages
 
-Moving averages are computed in pandas after retrieving the price series from Neo4j. Cypher has no built-in rolling window function, and `pandas.Series.rolling()` is the simpler tool for this purpose:
+Moving averages are computed in pandas after retrieving the price series from Neo4j. Cypher has no built-in rolling window function and `pandas.Series.rolling()` is the simpler tool for this purpose:
 
 ```python
 price_df["ma_20"] = price_df["close"].rolling(window=20).mean()
@@ -232,7 +232,7 @@ The sidebar controls -- symbol, date range, bucket size -- apply to the Candlest
 
 **Intra-day data.** The one-price-per-trading-day model doesn't extend to intra-day or tick data. Minute-level data for 147 stocks over five years would be around 72 million price nodes (390 one-minute bars per trading day) -- well beyond what Neo4j Aura's free tier can hold.
 
-**Moving averages in Cypher.** Computing a rolling mean in pure Cypher is possible but verbose, and pandas is simpler. The division of labor in this chapter -- Neo4j for retrieval and filtering, pandas for numerical computation -- is the right default for this kind of analytical workload.
+**Moving averages in Cypher.** Computing a rolling mean in pure Cypher is possible but verbose and pandas is simpler. The division of labor in this chapter -- Neo4j for retrieval and filtering, pandas for numerical computation -- is the right default for this kind of analytical workload.
 
 ## Going Further
 

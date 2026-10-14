@@ -4,9 +4,9 @@
 
 Neo4j node properties support primitive types -- strings, integers, floats, booleans, dates -- and arrays of primitives. Nested maps are not supported as native property values. To store heterogeneous, document-style metadata alongside graph structure, a common approach is to serialize it as a JSON string and parse it back at query time using APOC's `apoc.convert.fromJsonMap()` function.
 
-Nested structure doesn't fit the property model, and deeply nested documents are usually better handled at the edge between the database and the application than inside the graph query itself. The sweet spot is: store rich, variable-structure metadata as a JSON string on the node; use APOC to deserialize it inside Cypher when you need to query or mutate it; promote frequently filtered fields to top-level properties with their own indexes.
+Nested structure doesn't fit the property model and deeply nested documents are usually better handled at the edge between the database and the application than inside the graph query itself. The sweet spot is: store rich, variable-structure metadata as a JSON string on the node; use APOC to deserialize it inside Cypher when you need to query or mutate it; promote frequently filtered fields to top-level properties with their own indexes.
 
-APOC (Awesome Procedures On Cypher) is Neo4j's standard extension library, and a subset of APOC Core is pre-installed on Aura. It provides `apoc.convert.fromJsonMap()` to parse a JSON string into a Cypher map, `apoc.convert.toJson()` to serialize a map back to a string and `apoc.map.removeKey()` to delete a field from a map without touching the rest.
+APOC (Awesome Procedures On Cypher) is Neo4j's standard extension library and a subset of APOC Core is pre-installed on Aura. It provides `apoc.convert.fromJsonMap()` to parse a JSON string into a Cypher map, `apoc.convert.toJson()` to serialize a map back to a string and `apoc.map.removeKey()` to delete a field from a map without touching the rest.
 
 ## When Would You Reach for It?
 
@@ -258,7 +258,7 @@ The keyword search runs client-side against the already-loaded item data, search
 
 **Frequently filtered fields.** If you find yourself filtering by a metadata field in every query -- `WHERE meta.language = 'English'` -- that field should be a top-level node property with its own index. The rule is: if you filter by it, promote it; if you just retrieve it, leave it in the JSON string.
 
-**APOC availability.** A subset of APOC Core is pre-installed on Aura, and the three functions used in this chapter are part of it. If you're running a self-hosted Neo4j deployment, APOC must be explicitly installed and enabled. Check `CALL apoc.help('convert')` to confirm it's available before relying on it.
+**APOC availability.** A subset of APOC Core is pre-installed on Aura and the three functions used in this chapter are part of it. If you're running a self-hosted Neo4j deployment, APOC must be explicitly installed and enabled. Check `CALL apoc.help('convert')` to confirm it's available before relying on it.
 
 **Mutation is a round-trip.** Adding or removing a metadata field requires parsing the JSON string, modifying the map and serializing it back -- two or three APOC function calls per mutation. For bulk updates across many nodes the cost adds up. Because each mutation rewrites the whole string, two concurrent updates to different keys can also overwrite each other. If metadata mutations are frequent, consider whether some fields should be top-level properties instead.
 
