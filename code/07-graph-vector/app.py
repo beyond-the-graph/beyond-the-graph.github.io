@@ -2,7 +2,6 @@ import os
 import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.io as pio
 import streamlit as st
 
 from fastembed import TextEmbedding
@@ -17,8 +16,6 @@ st.set_page_config(
     page_icon="🔍",
     layout="wide"
 )
-
-pio.renderers.default = "browser"
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -72,8 +69,8 @@ def find_rings(driver, hops, min_amount, max_amount, limit=20):
                   AND t3.amount >= $min_amount AND t3.amount <= $max_amount
                   AND a1.account_id < a2.account_id
                   AND a1.account_id < a3.account_id
-                  AND abs(duration.between(datetime(t1.timestamp), datetime(t2.timestamp)).minutes) < 90
-                  AND abs(duration.between(datetime(t2.timestamp), datetime(t3.timestamp)).minutes) < 90
+                  AND abs(datetime(t1.timestamp).epochSeconds - datetime(t2.timestamp).epochSeconds) < 5400
+                  AND abs(datetime(t2.timestamp).epochSeconds - datetime(t3.timestamp).epochSeconds) < 5400
                 RETURN a1.account_id AS account_1,
                        a2.account_id AS account_2,
                        a3.account_id AS account_3,
@@ -95,9 +92,9 @@ def find_rings(driver, hops, min_amount, max_amount, limit=20):
                   AND a1.account_id < a2.account_id
                   AND a1.account_id < a3.account_id
                   AND a1.account_id < a4.account_id
-                  AND abs(duration.between(datetime(t1.timestamp), datetime(t2.timestamp)).minutes) < 90
-                  AND abs(duration.between(datetime(t2.timestamp), datetime(t3.timestamp)).minutes) < 90
-                  AND abs(duration.between(datetime(t3.timestamp), datetime(t4.timestamp)).minutes) < 90
+                  AND abs(datetime(t1.timestamp).epochSeconds - datetime(t2.timestamp).epochSeconds) < 5400
+                  AND abs(datetime(t2.timestamp).epochSeconds - datetime(t3.timestamp).epochSeconds) < 5400
+                  AND abs(datetime(t3.timestamp).epochSeconds - datetime(t4.timestamp).epochSeconds) < 5400
                 RETURN a1.account_id AS account_1,
                        a2.account_id AS account_2,
                        a3.account_id AS account_3,
@@ -124,10 +121,10 @@ def find_rings(driver, hops, min_amount, max_amount, limit=20):
                   AND a1.account_id < a3.account_id
                   AND a1.account_id < a4.account_id
                   AND a1.account_id < a5.account_id
-                  AND abs(duration.between(datetime(t1.timestamp), datetime(t2.timestamp)).minutes) < 90
-                  AND abs(duration.between(datetime(t2.timestamp), datetime(t3.timestamp)).minutes) < 90
-                  AND abs(duration.between(datetime(t3.timestamp), datetime(t4.timestamp)).minutes) < 90
-                  AND abs(duration.between(datetime(t4.timestamp), datetime(t5.timestamp)).minutes) < 90
+                  AND abs(datetime(t1.timestamp).epochSeconds - datetime(t2.timestamp).epochSeconds) < 5400
+                  AND abs(datetime(t2.timestamp).epochSeconds - datetime(t3.timestamp).epochSeconds) < 5400
+                  AND abs(datetime(t3.timestamp).epochSeconds - datetime(t4.timestamp).epochSeconds) < 5400
+                  AND abs(datetime(t4.timestamp).epochSeconds - datetime(t5.timestamp).epochSeconds) < 5400
                 RETURN a1.account_id AS account_1,
                        a2.account_id AS account_2,
                        a3.account_id AS account_3,
@@ -170,51 +167,48 @@ def run_graph_vector_search(driver, query, top_k, threshold,
     with driver.session(database=NEO4J_DATABASE) as session:
         if ring_hops == 3:
             ring_match = """
-                MATCH (a1:Account)-[:MADE]->(t)-[:TO]->(x1:Account),
-                      (x1)-[:MADE]->(rt1:Transaction)-[:TO]->(x2:Account),
-                      (x2)-[:MADE]->(rt2:Transaction)-[:TO]->(x3:Account),
-                      (x3)-[:MADE]->(rt3:Transaction)-[:TO]->(x1)
+                MATCH (a1:Account)-[:MADE]->(t)-[:TO]->(a2:Account),
+                      (a2)-[:MADE]->(rt2:Transaction)-[:TO]->(a3:Account),
+                      (a3)-[:MADE]->(rt3:Transaction)-[:TO]->(a1)
             """
             ring_where = (
-                "rt1.amount >= $min_amount AND rt1.amount <= $max_amount"
+                "t.amount >= $min_amount AND t.amount <= $max_amount"
                 " AND rt2.amount >= $min_amount AND rt2.amount <= $max_amount"
                 " AND rt3.amount >= $min_amount AND rt3.amount <= $max_amount"
-                " AND abs(duration.between(datetime(rt1.timestamp), datetime(rt2.timestamp)).minutes) < 90"
-                " AND abs(duration.between(datetime(rt2.timestamp), datetime(rt3.timestamp)).minutes) < 90"
+                " AND abs(datetime(t.timestamp).epochSeconds - datetime(rt2.timestamp).epochSeconds) < 5400"
+                " AND abs(datetime(rt2.timestamp).epochSeconds - datetime(rt3.timestamp).epochSeconds) < 5400"
             )
-            ring_return = "[x1.account_id, x2.account_id, x3.account_id] AS ring_accounts"
+            ring_return = "[a1.account_id, a2.account_id, a3.account_id] AS ring_accounts"
         else:  # 4-hop
             ring_match = """
-                MATCH (a1:Account)-[:MADE]->(t)-[:TO]->(x1:Account),
-                      (x1)-[:MADE]->(rt1:Transaction)-[:TO]->(x2:Account),
-                      (x2)-[:MADE]->(rt2:Transaction)-[:TO]->(x3:Account),
-                      (x3)-[:MADE]->(rt3:Transaction)-[:TO]->(x4:Account),
-                      (x4)-[:MADE]->(rt4:Transaction)-[:TO]->(x1)
+                MATCH (a1:Account)-[:MADE]->(t)-[:TO]->(a2:Account),
+                      (a2)-[:MADE]->(rt2:Transaction)-[:TO]->(a3:Account),
+                      (a3)-[:MADE]->(rt3:Transaction)-[:TO]->(a4:Account),
+                      (a4)-[:MADE]->(rt4:Transaction)-[:TO]->(a1)
             """
             ring_where = (
-                "rt1.amount >= $min_amount AND rt1.amount <= $max_amount"
+                "t.amount >= $min_amount AND t.amount <= $max_amount"
                 " AND rt2.amount >= $min_amount AND rt2.amount <= $max_amount"
                 " AND rt3.amount >= $min_amount AND rt3.amount <= $max_amount"
                 " AND rt4.amount >= $min_amount AND rt4.amount <= $max_amount"
-                " AND abs(duration.between(datetime(rt1.timestamp), datetime(rt2.timestamp)).minutes) < 90"
-                " AND abs(duration.between(datetime(rt2.timestamp), datetime(rt3.timestamp)).minutes) < 90"
-                " AND abs(duration.between(datetime(rt3.timestamp), datetime(rt4.timestamp)).minutes) < 90"
+                " AND abs(datetime(t.timestamp).epochSeconds - datetime(rt2.timestamp).epochSeconds) < 5400"
+                " AND abs(datetime(rt2.timestamp).epochSeconds - datetime(rt3.timestamp).epochSeconds) < 5400"
+                " AND abs(datetime(rt3.timestamp).epochSeconds - datetime(rt4.timestamp).epochSeconds) < 5400"
             )
-            ring_return = "[x1.account_id, x2.account_id, x3.account_id, x4.account_id] AS ring_accounts"
+            ring_return = "[a1.account_id, a2.account_id, a3.account_id, a4.account_id] AS ring_accounts"
 
         result = session.run(f"""
             CALL db.index.vector.queryNodes(
                 'transaction_embeddings', $top_k, $embedding
             ) YIELD node AS t, score
             WHERE score >= $threshold
-            MATCH (a1:Account)-[:MADE]->(t)
             {ring_match}
             WHERE {ring_where}
             RETURN DISTINCT
                 t.tx_id         AS tx_id,
                 score           AS similarity,
-                a1.account_id   AS entry_account,
-                t.amount        AS entry_amount,
+                a1.account_id   AS source_account,
+                t.amount        AS amount,
                 t.is_fraud_ring AS is_fraud_ring,
                 {ring_return}
             ORDER BY score DESC
@@ -406,7 +400,7 @@ with tab1:
                     f"${r[f'amount_{i}']:,.2f}" for i in range(1, h + 1)
                 )
                 rows.append({"Ring": accounts, "Amounts": amounts})
-            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+            st.dataframe(pd.DataFrame(rows), hide_index=True)
 
         elif qtype == "Pure Vector":
             rows = []
@@ -420,7 +414,7 @@ with tab1:
                     "Fraud Ring":     "YES" if r["is_fraud_ring"] else "NO",
                     "Description":    r["description"],
                 })
-            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+            st.dataframe(pd.DataFrame(rows), hide_index=True)
 
         elif qtype == "Graph + Vector":
             rows = []
@@ -428,13 +422,13 @@ with tab1:
                 ring = " -> ".join(r["ring_accounts"]) + " -> (back to start)"
                 rows.append({
                     "TX ID":        r["tx_id"],
-                    "Entry Account": r["entry_account"],
-                    "Amount":       f"${r['entry_amount']:,.2f}",
+                    "Source Account": r["source_account"],
+                    "Amount":       f"${r['amount']:,.2f}",
                     "Score":        f"{r['similarity']:.4f}",
                     "Fraud Ring":   "YES" if r["is_fraud_ring"] else "NO",
                     "Ring":         ring,
                 })
-            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+            st.dataframe(pd.DataFrame(rows), hide_index=True)
 
 # ---------------------------------------------------------------------------
 # Tab 2: Ring Visualization
@@ -458,7 +452,7 @@ with tab2:
         else:
             fig = build_ring_plot(results, h)
             if fig:
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig)
                 st.caption(
                     f"{len(results)} {h}-hop rings detected. "
                     "Each cluster of nodes forms a circular money flow."
