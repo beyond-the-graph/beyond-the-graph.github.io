@@ -1,6 +1,6 @@
-# Chapter 7: Graph + Vector
+# Chapter 7: Graph + vector
 
-## What Is It?
+## What is it?
 
 Vector search answers "which transactions look suspicious?" Graph traversal answers "which accounts are connected through circular money flows?" Used together, they answer a third question that neither can answer alone: "which suspicious-looking transactions are part of a coordinated fraud ring?"
 
@@ -8,7 +8,7 @@ This is the combination the book has been building toward. Every capability in t
 
 The result is a fraud detection system with three operational modes. Pure graph ring detection finds coordinated circular money flows using Cypher pattern matching. Pure vector search finds transactions whose prose descriptions resemble known fraud language. Graph + vector combined does both in a single query, surfacing only those suspicious transactions that also participate in a ring -- a stronger fraud signal than either approach alone.
 
-## When Would You Reach for It?
+## When would you reach for it?
 
 The graph + vector combination earns its place when your fraud signal has two components: semantic content (what a transaction is described as) and structural position (who sent it and to whom and how those accounts are connected). Either component alone produces noise. Together they produce signal.
 
@@ -21,13 +21,13 @@ Reach for this pattern when:
 
 Financial fraud is the canonical application, but the same pattern applies to social network abuse detection, supply chain anomaly detection and any domain where suspicious behavior has both a semantic signature and a structural pattern.
 
-## The Use Case
+## The use case
 
 We build a synthetic fraud detection system with 1,000 bank accounts and approximately 50,000 transactions. The vast majority of transactions are legitimate -- ring transactions account for less than 0.3% of the data. Hidden in the transaction graph are planted fraud rings of 3, 4 and 5 hops, plus random rings of up to 6 hops. Every ring amount falls between $2,000 and $9,999, the amounts within one ring differ by at most 3% and each ring completes in under 90 minutes.
 
 The challenge is finding those rings without knowing in advance which accounts or transactions are involved.
 
-## The Data
+## The data
 
 The dataset is generated entirely in the notebook with a fixed random seed for reproducibility.
 
@@ -49,7 +49,7 @@ The graph model is:
 (:Account)
 ```
 
-## Building the Application
+## Building the application
 
 ### Prerequisites
 
@@ -66,7 +66,7 @@ This chapter uses `fastembed` for embedding the transaction descriptions. `faste
 
 The notebook generates all the data itself. Run it first to load the graph, then start the app with `streamlit run app.py`. The notebook clears the database named in `NEO4J_DATABASE` before loading, so don't point it at a database you want to keep.
 
-### Loading the Embedding Model
+### Loading the embedding model
 
 ```python
 from fastembed import TextEmbedding
@@ -81,7 +81,7 @@ EMBEDDING_DIMS = len(get_embedding("test"))  # 384
 
 We call `embed_model.embed([text])` with a list and take the first result. This is slightly less efficient than batch embedding but keeps the helper function simple. For the full 50,000 transactions we embed in batches.
 
-### Loading the Graph
+### Loading the graph
 
 We load accounts first, then embed and load transactions in batches of 500. The embedding step dominates the load time for 50,000 transactions and how long it takes depends on your hardware:
 
@@ -112,7 +112,7 @@ def embed_and_load_batch(session, batch):
 
 Each transaction is connected to two accounts: the source account via `MADE` and the target account via `TO`. This two-relationship pattern is what enables Cypher to traverse ring patterns using comma-separated patterns in a single `MATCH`.
 
-### Creating the Vector Index
+### Creating the vector index
 
 The vector index uses cosine similarity, which is appropriate for sentence embeddings:
 
@@ -129,7 +129,7 @@ session.run(f"""
 
 We poll until the index is `ONLINE` before running any similarity queries -- index creation is asynchronous.
 
-### Query 1: Pure Graph Ring Detection
+### Query 1: Pure graph ring detection
 
 Cypher expresses a 3-hop ring as a comma-separated pattern that returns to its origin:
 
@@ -171,7 +171,7 @@ One Cypher detail: the patterns inside a single `MATCH` are separated by commas.
 
 The same structure extends naturally for 4-hop and 5-hop rings by adding one more account and transaction to the pattern. In SQL you'd add one more self-join per hop, or write a recursive CTE with a depth cap and path tracking and both get harder to read and tune as the rings grow.
 
-### Query 2: Pure Vector Search
+### Query 2: Pure vector search
 
 Pure vector search embeds the query string and finds semantically similar transactions:
 
@@ -196,7 +196,7 @@ result = session.run("""
 
 The vector search returns transactions whose descriptions are semantically similar to the query. Because ring transactions were generated with structuring and layering language, the queries we ran about circular money movement returned only ring transactions in their top five, with similarity scores above 0.90. The index reports cosine similarity as (1 + cosine) / 2, so scores run from 0 to 1. But pure vector search has no awareness of whether those transactions form rings -- it can flag individual suspicious transactions without confirming the pattern.
 
-### Query 3: Graph + Vector Combined
+### Query 3: Graph + vector combined
 
 The combined query runs vector search first, then immediately extends into graph traversal in the same Cypher statement. The suspicious transaction must itself be the first hop of a ring: it leaves its source account and the receiving account's onward transfers lead back to the source:
 
@@ -228,7 +228,7 @@ The `ring_match` and `ring_where` strings are built dynamically based on the `ri
 
 This is the key result: only transactions that are both semantically suspicious (high similarity to the query) and structurally connected (the first hop of a circular ring) appear in the output. Because the ring is anchored on the suspicious transaction, each ring transaction that scores well appears as its own row. The `is_fraud_ring` flag confirms against the hidden ground truth.
 
-### Ring Summary
+### Ring summary
 
 A batch ring summary query counts the detected 3-hop rings and confirmed fraud:
 
@@ -254,7 +254,7 @@ result = session.run("""
 
 With the amount range and timestamp filters applied, this query returns 13 detected 3-hop rings, all 13 confirmed as planted fraud. That 100% precision comes with the territory on synthetic data: every ring is flagged as fraud and in this dataset the filters leave no legitimate cycles. The ring summary is a full graph scan and is slow enough that it's better as a batch analytical query than an interactive one.
 
-### Ring Visualization
+### Ring visualization
 
 Detected rings are visualized as a NetworkX force-directed graph rendered with Plotly. Red nodes (`#E63946`) represent accounts; grey edges show the direction of money flow. The spring layout with `k=1.0` spreads the nodes organically without forcing rigid geometric shapes:
 
@@ -275,7 +275,7 @@ Figure 7-1 shows ten of the detected 3-hop rings -- each cluster of three nodes 
 
 *Figure 7-1. 3-hop Fraud Rings.*
 
-### The Streamlit App
+### The Streamlit app
 
 The sidebar has a query type selector -- Pure Graph, Pure Vector, Graph + Vector -- with parameters that adapt to the selection. Pure Graph exposes hop count (3, 4 or 5), min/max amount and a result limit. Pure Vector exposes a query text area, vector candidate count and similarity threshold. Graph + Vector exposes the query text area, vector candidate count, similarity threshold, min/max amount and a ring depth of 3 or 4.
 
@@ -283,7 +283,7 @@ The app has two tabs. The Query Explorer tab runs the selected query and display
 
 All results persist in `st.session_state` across re-runs. The embedding model is cached with `@st.cache_resource` so it loads once and stays in memory for the session -- fastembed downloads are slow on first run but instant on subsequent ones.
 
-## What You'd Hit in Production
+## What you'd hit in production
 
 **Embedding throughput.** fastembed with `BAAI/bge-small-en-v1.5` runs on CPU, so embedding time grows linearly with the number of transactions -- time the load on your own machine before scaling it up. For millions of transactions at ingestion time, batch embedding with a GPU or a hosted embedding API would be significantly faster.
 
@@ -295,7 +295,7 @@ All results persist in `st.session_state` across re-runs. The embedding model is
 
 **Timestamp storage.** Timestamps are stored here as ISO strings and parsed with `datetime()` inside every query. Storing them as native `datetime` values, as chapter 4 does for dates, avoids the repeated parsing and makes time arithmetic and indexing simpler.
 
-## Going Further
+## Going further
 
 This chapter closes the arc the book has been tracing. We started with the graph model in chapter 1 -- stations, connections, traversal. We added capability by capability: text search, spatial queries, temporal data, document properties, vector similarity. Chapter 7 combines the last two into something that neither a graph query nor a vector query does alone.
 

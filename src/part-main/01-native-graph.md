@@ -1,6 +1,6 @@
-# Chapter 1: Native Graph
+# Chapter 1: Native graph
 
-## What Is It?
+## What is it?
 
 At its core, Neo4j stores data as nodes and relationships. A node represents an entity -- a station, a person, a product. A relationship connects two nodes and carries a direction and a type -- `CONNECTS_TO`, `AUTHORED`, `PURCHASED`. Both nodes and relationships can hold properties: a station has a name and coordinates, a connection has a line name.
 
@@ -8,7 +8,7 @@ This sounds simple and it is. The power comes from what this model makes natural
 
 Cypher, Neo4j's query language, makes this traversal natural to express. A pattern like `(a)-[:CONNECTS_TO*1..5]->(b)` reads almost like English: find any path from `a` to `b` using `CONNECTS_TO` relationships, up to five hops deep. The same question in SQL requires a recursive CTE, a depth cap, careful deduplication and considerably more thought.
 
-## When Would You Reach for It?
+## When would you reach for it?
 
 The native graph model earns its place when the connections between entities are the point of the data, not a side effect of it. Transport networks are the textbook example: a station on its own is just a location, but the network of connections between stations is what makes it useful. Social graphs, supply chains, recommendation networks, knowledge graphs and fraud detection are all problems where the structure of the connections is the signal you're trying to extract.
 
@@ -21,13 +21,13 @@ Reach for Neo4j's graph model when:
 
 A simple parent-child hierarchy or a single join doesn't justify the switch. But as soon as you find yourself writing recursive CTEs or self-joins to answer questions about how entities connect, the graph model starts paying for itself.
 
-## The Use Case
+## The use case
 
 For this chapter we'll build a London Underground route explorer. Given any two stations, find the shortest path between them -- the minimum number of stops and the line changes along one such route. Given a starting station, find all stations reachable within a given number of stops and visualize the spread of the network from that point. And surface a structural curiosity of the network: stations in the same fare zone that require surprisingly long journeys between them and stations in adjacent fare zones that are only one or two stops apart.
 
 The Underground is a natural fit for the graph model. Stations are nodes. Connections between adjacent stations on the same line are relationships. The line name and color are properties on each relationship. The network topology -- which station connects to which, and how -- is exactly what the data are about.
 
-## The Data
+## The data
 
 We use three CSV files from the publicly available London Underground dataset (which also includes some DLR and Tramlink stations):
 
@@ -39,7 +39,7 @@ Before loading, we merge line colors onto the connections and filter stations do
 
 One preprocessing detail: zone values in the raw data are sometimes composite strings like `"3,4,5,6"` for stations that straddle multiple zones. We keep these as-is on the node but filter them out when running zone-based analysis by matching only stations whose zone field is a single integer.
 
-## Building the Application
+## Building the application
 
 ### Prerequisites
 
@@ -47,7 +47,7 @@ You'll need a Neo4j Aura free-tier instance with the connection details stored a
 
 The chapter also uses CartoDB basemap tiles for the Folium maps. CartoDB now requires a free API key, available at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), stored as `CARTO_API_KEY`. The notebook requires the key. The Streamlit app degrades gracefully if it's absent, falling back to the default CartoDB Positron tile set.
 
-### Loading the Graph
+### Loading the graph
 
 We create a uniqueness constraint on station name, then load stations and connections:
 
@@ -77,7 +77,7 @@ session.run("""
 
 We create bidirectional `CONNECTS_TO` relationships because tube trains run in both directions. The isochrone query relies on this, since it follows relationships in one direction only. The shortest path query matches in either direction, so it works either way.
 
-### Shortest Path
+### Shortest path
 
 The shortest path query uses Cypher's built-in `shortestPath()` function. We match both stations by name and find the minimum-hop path:
 
@@ -110,7 +110,7 @@ As shown in Figure 1-1, the route from Kings Cross St. Pancras to Waterloo cover
 
 One naming note: the dataset uses `"Kings Cross St. Pancras"` without an apostrophe. Passing `"King's Cross St. Pancras"` returns no result -- worth checking if your shortest path queries come back empty. Note also that the route reflects the connections in the dataset rather than the TfL journey planner, which may suggest a different path. Also, `shortestPath()` minimizes the number of stops, not the number of line changes. When several routes tie, Cypher returns one of them, so another route of the same length with fewer changes may exist.
 
-### Isochrone -- Reachable Stations
+### Isochrone -- reachable stations
 
 An isochrone shows all stations reachable within a given number of stops from a starting point. This is a variable-depth traversal -- exactly the kind of query that relational databases handle poorly and Neo4j handles naturally:
 
@@ -133,7 +133,7 @@ Note the directed `->` in the pattern -- the bidirectional relationships mean th
 iso_df = iso_df[iso_df["name"] != ISO_ORIGIN].reset_index(drop=True)
 ```
 
-### Visualizing the Isochrone
+### Visualizing the isochrone
 
 As well as coloring each station marker by hop count, we compute convex hull polygons for each hop tier and draw them as nested filled areas on the map. This gives a much cleaner sense of how the reachable area expands stop by stop:
 
@@ -169,7 +169,7 @@ From Oxford Circus at eight hops, the network fans out further west and south th
 
 *Figure 1-2. Isochrone Map.*
 
-### Zone Mismatch Analysis
+### Zone mismatch analysis
 
 The zone mismatch analysis surfaces the structural tension between TfL's fare zones -- which imply geographic equivalence -- and the actual tube network, which is radially organized around central London.
 
@@ -200,7 +200,7 @@ The same batch query runs for cross-zone pairs: stations in adjacent zones sampl
 
 We visualize same-zone pairs as a box plot of hop counts per zone, which shows that zones further from the centre have wider distributions -- more variance in how far apart same-zone stations actually are on the network. Cross-zone anomalies are mapped as teal lines connecting station pairs that are very close on the network but on opposite sides of a zone boundary.
 
-### The Streamlit App
+### The Streamlit app
 
 The Streamlit application has two tabs. The Shortest Path tab lets users pick any two stations from dropdown menus, displays a summary of stops, lines and interchanges and renders the route on a Folium map with each segment colored by tube line. The Isochrone tab lets users pick a starting station and a maximum stop count (one to eight) from a slider, then renders the convex hull areas and hop-colored station markers on a Folium map, with a table of reachable station counts by hop in an expander below it.
 
@@ -226,7 +226,7 @@ MAP_TILES = (
 
 The double braces prevent Python's f-string parser from treating `{s}`, `{z}`, `{x}` and `{y}` as format arguments -- they're Folium's own template placeholders and need to be passed through as literal curly-brace strings.
 
-## What You'd Hit in Production
+## What you'd hit in production
 
 **Graph algorithms beyond shortest path.** Cypher's `shortestPath()` finds the minimum-hop path, which is all this dataset supports. Weighted shortest path -- minimizing journey time rather than stop count -- requires travel time data on each connection and the Graph Data Science library, available on paid Aura tiers or self-hosted deployments. For the Underground, hop count is a reasonable proxy for journey time given the network's regularity, but for sparser or more varied networks weighted traversal would give meaningfully different results.
 
@@ -236,7 +236,7 @@ The double braces prevent Python's f-string parser from treating `{s}`, `{z}`, `
 
 **Relationship naming.** The relationships in this chapter are `CONNECTS_TO`. It's easy to write `CONNECTED_TO` by habit -- they look similar and Neo4j won't error, it'll just return no results. If a Cypher query comes back empty when you expect results, check the relationship type first.
 
-## Going Further
+## Going further
 
 The native graph model is the foundation for everything that follows in this book. The connections between entities -- modeled as relationships -- are what make graph traversal fast and Cypher expressive. But a graph database that only stores topology is only part of the picture.
 

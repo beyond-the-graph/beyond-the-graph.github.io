@@ -1,6 +1,6 @@
-# Chapter 2: Full-Text Search
+# Chapter 2: Full-text search
 
-## What Is It?
+## What is it?
 
 Neo4j ships with Apache Lucene built in, giving you full-text search -- phrase matching, fuzzy matching, relevance scoring -- without a separate service. When your data are already in a graph, that search becomes an entry point into something a standalone search engine can't do: you find your initial results with Lucene, then traverse the graph to discover what surrounds them.
 
@@ -8,7 +8,7 @@ The full-text index in Neo4j is created with a single Cypher procedure call and 
 
 What makes this distinctive is the combination with graph traversal. A standalone search engine returns documents. Neo4j returns nodes -- and nodes are connected to other nodes by relationships. A full-text search that finds a paper can immediately extend into a Cypher query that follows citation links, finds co-authors, or surfaces papers that are frequently cited alongside the result. That combination, in a single Cypher statement, is what sets Neo4j's full-text search apart from running a search engine alongside a database.
 
-## When Would You Reach for It?
+## When would you reach for it?
 
 Full-text search in Neo4j earns its place when the text you're searching is embedded in a graph and the graph structure is part of what you want to explore. Research literature is the canonical example: papers are text-heavy entities, but the citations between them form a network that carries as much signal as the content itself.
 
@@ -21,11 +21,11 @@ Reach for Neo4j's full-text search when:
 
 If you're building a standalone search engine over billions of documents with no graph component, a dedicated search platform is the better choice. But for connected text -- papers that cite each other, articles linked by authorship, tickets connected by dependency -- Neo4j's full-text search is a natural fit.
 
-## The Use Case
+## The use case
 
 For this chapter we'll build a research paper discovery tool. Users can search for papers by keyword, phrase or fuzzy match, filter results by field, year or citation count and then traverse the citation graph from any result to discover related work. The traversal options include following outgoing citations, incoming citations, other papers by the same authors and papers that are co-cited alongside the top result.
 
-## The Data
+## The data
 
 We use the same synthetic 200-paper research dataset from the [Weaviate chapter](https://seven-vector-databases.github.io/part-main/04-weaviate.html) of *Seven Vector Databases in Seven Days* -- identical fields, venues, author names, abstract templates and random seed -- so the papers are directly comparable across both books. Two things are added that the Weaviate version didn't have: `Author` nodes connected to papers via `AUTHORED` relationships and `CITES` relationships between papers, with a citation bias toward papers in the same or adjacent research fields.
 
@@ -41,13 +41,13 @@ And two relationship types:
 
 The `abstract` and `title` properties are the target for full-text search. The structured fields -- `field`, `year`, `citation_count` -- serve as filters. The generator draws titles from a small set of templates, so a few papers share an identical title. They're still distinct nodes, with different venues, years and citation counts.
 
-## Building the Application
+## Building the application
 
 ### Prerequisites
 
 You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables. The notebook reads four of them: `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE`. It also clears the target database before loading, so point it at an instance you're happy to wipe. Every chapter's notebook does this, so running this one removes the graph from any earlier chapter.
 
-### Loading the Graph
+### Loading the graph
 
 We clear the database before each run. To avoid transaction timeouts on Aura, we drop constraints and indexes first, then delete nodes in batches of 1,000:
 
@@ -127,7 +127,7 @@ session.run("""
 """, citations=citations)
 ```
 
-### Creating the Full-Text Index
+### Creating the full-text index
 
 A single procedure call creates a Lucene index over both `title` and `abstract`:
 
@@ -154,7 +154,7 @@ for _ in range(30):
     time.sleep(1)
 ```
 
-### Basic Full-Text Search
+### Basic full-text search
 
 Querying the index uses `db.index.fulltext.queryNodes`. It returns nodes ranked by BM25 score:
 
@@ -177,7 +177,7 @@ def search_papers(query: str, top_k: int = 5):
 
 Note the parameter name: `search_query`, not `query`. The Neo4j Python driver reserves `query` as the keyword argument for the Cypher string itself. Using `query=...` in the keyword arguments conflicts with the driver internals and causes an error. Use `search_query`, `q` or any other name.
 
-### Keyword, Phrase and Fuzzy Search
+### Keyword, phrase and fuzzy search
 
 Lucene's full query syntax is available. The three most useful modes for discovery:
 
@@ -208,7 +208,7 @@ Figure 2-1 shows the score difference for the query `graph neural networks`.
 
 *Figure 2-1. Keyword vs. Phrase Search.*
 
-### Filtered Search
+### Filtered search
 
 Full-text search matches by text and ranks by relevance; structured filters narrow by property. The two compose naturally in Cypher with a `WHERE` clause after the `YIELD`:
 
@@ -230,7 +230,7 @@ cypher = f"""
 
 Where `where_clause` is built dynamically from whichever filters are active -- field, minimum year, minimum citation count. The Lucene index does the text matching first; the `WHERE` clause filters the resulting nodes. This is the same pattern as filtered vector search in chapter 6 and chapter 7.
 
-### Search Then Traverse: The Graph Layer
+### Search then traverse: The graph layer
 
 This is where Neo4j's full-text search separates itself from a standalone search engine. Once we have a top-scoring paper, we can immediately traverse the graph from it.
 
@@ -280,7 +280,7 @@ ORDER BY shared_citations DESC
 
 In this synthetic dataset each paper cites only a few others, so shared-citation counts are small (mostly one or two) and the co-cited results are noisy. A real citation graph gives a much stronger signal.
 
-### Citation Network Visualization
+### Citation network visualization
 
 The citation network around a top result is visualized as an interactive Plotly graph. The top-scoring paper is the red central node. Blue nodes are papers it cites (outgoing edges). Green nodes are papers that cite it (incoming edges). Node size reflects citation count, capped at 300 citations.
 
@@ -308,7 +308,7 @@ Figure 2-2 shows an example citation network.
 
 *Figure 2-2. Citation Network.*
 
-### The Streamlit App
+### The Streamlit app
 
 The application has two tabs. The Search tab accepts a query string and exposes the three search modes (Keyword, Phrase, Fuzzy) as a radio button, optional filters (field, year, citation count) in a collapsible expander and a results count slider. Results are displayed as cards with title, field, venue, year, citation count and Lucene score, with a horizontal bar chart showing the score distribution across all results.
 
@@ -318,7 +318,7 @@ The Explore tab uses `st.session_state` to persist its results and the citation 
 
 The app reads the graph and the full-text index from Neo4j, so run the notebook first to load the graph and create the index, then launch the app with `streamlit run app.py`.
 
-## What You'd Hit in Production
+## What you'd hit in production
 
 **Index freshness.** Lucene indexes in Neo4j are updated synchronously on write -- new nodes are indexed as soon as they're created. For bulk ingestion, creating the index after loading is faster than having the index update on every write.
 
@@ -332,7 +332,7 @@ The app reads the graph and the full-text index from Neo4j, so run the notebook 
 
 **Batched deletion.** The simple `MATCH (n) DETACH DELETE n` pattern can time out on Aura for graphs with tens of thousands of nodes. Batching deletes in groups of 1,000 is more reliable and should be the default approach for database clearing in notebooks that might be re-run.
 
-## Going Further
+## Going further
 
 Full-text search surfaces papers by content. Graph traversal extends those results through citation links and authorship. But both of these approaches are vocabulary-dependent -- a search for "neural network" won't naturally surface a paper that uses "deep learning" throughout without ever using the phrase "neural network."
 

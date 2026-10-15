@@ -1,12 +1,12 @@
 # Conclusions
 
-## What We Built
+## What we built
 
 Over seven chapters we built seven example applications, each demonstrating a different Neo4j capability. We found shortest paths on the London Underground, discovered research papers through full-text search, queried air quality data across the Pyrenees corridor, analyzed five years of S&P 500 prices, managed a library inventory with heterogeneous metadata, searched 70,000 fashion images by visual similarity and detected fraud rings by combining vector search with graph traversal.
 
 Every notebook runs on Neo4j Aura's free tier. Every application is a working Streamlit app. The gotchas are real. The "what you'd hit in production" sections are meant.
 
-## What We Learned
+## What we learned
 
 ### Neo4j is more than a graph database
 
@@ -30,7 +30,7 @@ Neo4j is not the right tool for every problem in this book. High-frequency time 
 
 The right question is not "can Neo4j do this?" -- it usually can. The right question is "does the graph or multi-model dimension add enough value to justify Neo4j over a simpler alternative?"
 
-## A Practical Decision Guide
+## A practical decision guide
 
 **Use Neo4j's native graph model** when the connections between entities are the signal: transport networks, social graphs, supply chains, recommendation engines, fraud detection based on account relationships.
 
@@ -58,13 +58,13 @@ The table below summarizes the specific Neo4j features and functions used in eac
 | 6 | Vector Search | `VECTOR INDEX`, ANN search, euclidean similarity, `db.index.vector.queryNodes()`, post-filter oversampling (`k * n`), graph-filtered k-NN |
 | 7 | Graph + Vector | Vector search + graph traversal in a single Cypher query, comma-separated patterns in one `MATCH` for ring detection, `epochSeconds` timestamp constraints, dynamic hop count, `DISTINCT` deduplication |
 
-## What Comes Next
+## What comes next
 
 The multi-model database landscape is moving quickly. Neo4j continues to expand product capabilities. APOC continues to grow. The Graph Data Science library adds community detection, centrality algorithms and machine learning pipelines that build directly on the graph model.
 
 The specific procedures and syntax in this book may evolve. The underlying capabilities -- and the architectural patterns that make them useful -- will not.
 
-## A Final Note
+## A final note
 
 The goal of this book was not to argue that Neo4j should replace every database in your stack. It was to show that if you're using Neo4j or considering it for a graph use case, you already have access to full-text search, geospatial queries, temporal reasoning, document properties and vector similarity. Combining these capabilities with graph traversal is something few other databases do as naturally.
 

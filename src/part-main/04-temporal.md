@@ -1,12 +1,12 @@
 # Chapter 4: Temporal
 
-## What Is It?
+## What is it?
 
 Relational databases handle time series as regular rows -- a price is just another record in a table, distinguished from other records by a date column. Neo4j handles time series as graph structure: each price is a node, connected to a stock node via a `HAS_PRICE` relationship. Temporal queries become traversal questions. Start at a stock node, follow its price nodes, filter by date, aggregate. The graph model makes the time dimension as queryable as any other structure in the graph.
 
 Neo4j's native `date` and `datetime` types are first-class values in Cypher. A `date` property on a node is not stored as a string -- it has a structured representation that Cypher understands natively. You filter with `WHERE p.date >= date($start)`, sort chronologically and compute durations with `duration.between()`. A range index on `Price.date` supports date-range lookups on the price nodes. For queries that start from a single `Stock` node, as most of ours do, the planner may simply expand from the stock and filter, so check the plan with `PROFILE` if performance matters.
 
-## When Would You Reach for It?
+## When would you reach for it?
 
 Temporal queries in Neo4j earn their place when time is one dimension of a richer graph rather than the only dimension. Pure time series problems -- high-frequency trading data, IoT sensor streams at millisecond resolution -- belong in purpose-built time series databases. But when your time-varying data are connected to other entities that carry meaning, Neo4j handles the combination naturally.
 
@@ -19,11 +19,11 @@ Reach for Neo4j's temporal capability when:
 
 Financial data are a natural fit: prices are time series, but stocks are connected to each other through shared market behavior and the relationship between two stocks' price histories is itself a meaningful query.
 
-## The Use Case
+## The use case
 
 For this chapter we'll build a stock price analysis tool for a curated subset of S&P 500 companies. Users can view the full price history for any symbol, display it as a candlestick chart with configurable bucket sizes, overlay 20-day and 50-day moving averages, compare the performance of all symbols across the full five-year period and explore the price correlation between any two symbols in the notebook. The Streamlit app covers everything except the correlation.
 
-## The Data
+## The data
 
 We use the [S&P 500 historical price dataset](https://www.kaggle.com/datasets/camnugent/sandp500) from Kaggle, published under CC0 license. The full dataset covers 505 symbols from February 2013 to February 2018. We pick a curated list of 150 symbols across major sectors -- Technology, Financials, Healthcare, Consumer and others. Three of them aren't present in the dataset, so we load 147, which keeps the total node count within Aura's free-tier limit of 200,000 nodes.
 
@@ -35,7 +35,7 @@ The graph model is:
 
 `Stock` nodes carry only the `symbol` property. `Price` nodes carry the full OHLCV data for one trading day. At 147 symbols over roughly 1,260 trading days each, the graph contains 184,774 `Price` nodes. The model is deliberately simple -- a single `Stock` to `Price` star with no other entities -- so the chapter can focus on the temporal queries.
 
-## Building the Application
+## Building the application
 
 ### Prerequisites
 
@@ -50,7 +50,7 @@ export NEO4J_DATABASE="your-database"
 
 Download `all_stocks_5yr.csv` from the Kaggle dataset and place it in a `data` folder next to the notebook. Run the notebook first to load the graph, then start the app with `streamlit run app.py`. The notebook clears the database named in `NEO4J_DATABASE` before loading, so don't point it at a database you want to keep.
 
-### Loading the Graph
+### Loading the graph
 
 We create a uniqueness constraint on `Stock.symbol` and a range index on `Price.date`, then load in two passes:
 
@@ -95,7 +95,7 @@ for chunk in tqdm(chunks, desc="Loading prices"):
 
 We use `CREATE` rather than `MERGE` for price nodes -- each date is unique per stock and we're loading clean data, so `MERGE` would add overhead without benefit. Because `CREATE` isn't idempotent, re-running the load without clearing the database first would duplicate every price node. The notebook clears the database up front for that reason.
 
-### Query 1: Price History
+### Query 1: Price history
 
 The price history query filters by date using Neo4j's native `date()` function:
 
@@ -114,7 +114,7 @@ result = session.run("""
 
 The Neo4j driver returns `date` values as its own `neo4j.time.Date` objects, not Python's `datetime.date` and pandas can't convert them directly. To use them as a pandas datetime index for resampling, convert through strings with `pd.to_datetime(df["date"].astype(str))`.
 
-### Query 2: Candlestick Chart
+### Query 2: Candlestick chart
 
 The daily OHLC data comes back from Neo4j as individual rows. We bucket it into windows of N calendar days in pandas using `resample()` and `agg()`:
 
@@ -154,7 +154,7 @@ Figure 4-1 shows an example using the AAPL symbol.
 
 *Figure 4-1. AAPL Candlestick.*
 
-### Query 3: Moving Averages
+### Query 3: Moving averages
 
 Moving averages are computed in pandas after retrieving the price series from Neo4j. Cypher has no built-in rolling window function and `pandas.Series.rolling()` is the simpler tool for this purpose:
 
@@ -171,7 +171,7 @@ Figure 4-2 shows an example using the AAPL symbol.
 
 *Figure 4-2. AAPL Moving Averages.*
 
-### Query 4: Best and Worst Performers
+### Query 4: Best and worst performers
 
 The performance query runs entirely in Cypher, using `min()` and `max()` on the date to anchor the first and last price nodes:
 
@@ -194,7 +194,7 @@ result = session.run("""
 
 The query anchors on `min(p.date)` and `max(p.date)` rather than literal start and end dates because different symbols may have different first and last trading days in the dataset -- this approach handles a symbol that lists late or drops out early without any special casing. The results are displayed as a bar chart of the top 10 and bottom 10 performers, colored green for positive and red for negative returns.
 
-### Query 5: Price Correlation
+### Query 5: Price correlation
 
 Do two stocks move together? We fetch the closing prices for both symbols on matching dates in a single Cypher query and compute the Pearson correlation in pandas:
 
@@ -216,13 +216,13 @@ The `WHERE pa.date = pb.date` join happens in the graph query itself -- Neo4j ma
 
 One caution: correlating price levels mostly measures shared trend, since two rising series correlate strongly whatever their day-to-day behavior. For co-movement proper, correlate daily percentage returns instead.
 
-### The Streamlit App
+### The Streamlit app
 
 The application has three tabs. The Candlestick tab uses a symbol dropdown, a date range and a bucket size slider, all in the sidebar. It displays a summary of trading day count, first close and last close, then the candlestick chart. The Moving Average tab shows the same price series with 20-day and 50-day moving averages overlaid. The Performance tab shows the top 10 and bottom 10 performers across the full five-year period as a bar chart, with data tables for each group below.
 
 The sidebar controls -- symbol, date range, bucket size -- apply to the Candlestick and Moving Average tabs. The Performance tab runs a separate cached query over all symbols and ignores the date range selection.
 
-## What You'd Hit in Production
+## What you'd hit in production
 
 **Node count.** Aura's free tier caps at 200,000 nodes. 147 symbols at ~1,260 trading days each produces around 185,000 price nodes, which fits. The full 505-symbol dataset would produce around 619,000 price nodes and requires a paid tier. If you need more symbols, consider whether you need all five years of data or could work with a shorter window.
 
@@ -234,6 +234,6 @@ The sidebar controls -- symbol, date range, bucket size -- apply to the Candlest
 
 **Moving averages in Cypher.** Computing a rolling mean in pure Cypher is possible but verbose and pandas is simpler. The division of labor in this chapter -- Neo4j for retrieval and filtering, pandas for numerical computation -- is the right default for this kind of analytical workload.
 
-## Going Further
+## Going further
 
 Prices and dates are structured, numeric data. Every property in chapters 1 through 4 has been a scalar: a name, a coordinate, a date, a number. Chapter 5 explores what happens when nodes need to carry richer, more complex payloads -- variable-structure metadata that differs across instances of the same node type. That requires a different approach to property storage and it's where we go next.

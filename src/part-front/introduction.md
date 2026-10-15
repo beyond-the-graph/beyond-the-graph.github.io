@@ -1,6 +1,6 @@
 # Introduction
 
-## Neo4j Beyond the Graph
+## Neo4j beyond the graph
 
 Ask a developer what Neo4j is and you'll almost always get the same answer: a graph database. That answer is correct, but it's also incomplete, and the gap between what most people know about Neo4j and what Neo4j can actually do is the reason this book exists.
 
@@ -8,7 +8,7 @@ Neo4j started as a graph database and graph traversal remains its core strength.
 
 Many Neo4j users don't know this. They connect to an Aura instance, model their domain as nodes and relationships, write some Cypher and move on. That's a perfectly valid use of the product. But it's a fraction of what's available and the chapters that follow are an attempt to close that gap.
 
-## What This Book Is About
+## What this book is about
 
 Each chapter focuses on one Neo4j capability and one use case chosen to showcase it. We start with the native graph model -- the foundation everything else builds on -- and work outward from there. By the end you'll have seen Neo4j handle transport networks, research literature, air quality data, financial time series, library inventories, image similarity and fraud detection, each using a different capability or combination of capabilities.
 
@@ -24,13 +24,13 @@ The progression is deliberate. We begin with what Neo4j is best known for and ad
 | 6 | Vector Search | Fashion image similarity |
 | 7 | Graph + Vector | Fraud ring detection |
 
-## Who This Book Is For
+## Who this book is for
 
 This book is written for developers and data engineers who already have some familiarity with Neo4j -- you've run a Cypher query, you understand the node-relationship model -- but haven't explored the capabilities beyond the graph. It assumes you're comfortable with Python and Jupyter notebooks. It doesn't assume any prior experience with vector search, geospatial indexing or full-text search engines.
 
 If you've been using Neo4j as a graph database and wondering what else it can do, this book is for you. If you're evaluating Neo4j for a use case that isn't purely graph-shaped -- a search problem, a geospatial problem, a time series problem -- this book is for you. If you're building an application that needs several of these capabilities together, particularly the graph-plus-vector combination that closes the book, this book is for you.
 
-## How the Book Is Structured
+## How the book is structured
 
 Each chapter follows the same structure:
 
@@ -44,13 +44,13 @@ Each chapter follows the same structure:
 
 Every chapter comes with a Jupyter notebook and a Streamlit application. Chapter 3 is the exception, as the analysis notebook assumes the AQI data are already loaded, either by running the ingest notebook first or by importing the provided backup file.
 
-## A Note on the Dataset Choices
+## A note on the dataset choices
 
 Some chapters use real-world data -- London Underground station coordinates, Pyrenees air quality readings from IQAir, S&P 500 price history from Kaggle. Others use synthetic data generated in the notebook itself. In every case the choice was made to give the capability room to show what it can do: a transport network for graph traversal, ring amounts that stay within a few percent of each other for fraud detection, high-dimensional pixel vectors for image similarity.
 
 Where data comes from an external source it's either publicly available under an open license or generated fresh by running the notebook. Two chapters use free-tier API keys: chapters 1 and 3 use CartoDB basemap tiles for Folium maps and chapter 3 additionally uses the IQAir API for air quality data. Both keys are available on free tiers at [carto.com](https://carto.com/basemaps/apikey/) and [iqair.com](https://www.iqair.com/air-quality-monitors/api).
 
-## A Note on Aura
+## A note on Aura
 
 All examples in this book run against Neo4j Aura, the fully managed cloud service. Aura's free tier provides enough storage and compute for every dataset in the book. The connection pattern is the same throughout: set four environment variables -- `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` and `NEO4J_DATABASE` -- and every notebook connects. Chapters 1 and 3 need the extra keys described above.
 
@@ -58,7 +58,7 @@ To follow along, you'll need a free Aura account -- sign up at [Get Started for 
 
 If you prefer to run Neo4j locally, the examples work against Neo4j Desktop with minor adjustments: the connection URI and credentials and the APOC plugin for chapter 5.
 
-## Code and Notebooks
+## Code and notebooks
 
 All notebooks, Streamlit applications and source code are available at:
 

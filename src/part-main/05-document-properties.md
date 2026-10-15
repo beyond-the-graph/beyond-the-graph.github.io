@@ -1,6 +1,6 @@
-# Chapter 5: Document-Style Properties
+# Chapter 5: Document-style properties
 
-## What Is It?
+## What is it?
 
 Neo4j node properties support primitive types -- strings, integers, floats, booleans, dates -- and arrays of primitives. Nested maps are not supported as native property values. To store heterogeneous, document-style metadata alongside graph structure, a common approach is to serialize it as a JSON string and parse it back at query time using APOC's `apoc.convert.fromJsonMap()` function.
 
@@ -8,7 +8,7 @@ Nested structure doesn't fit the property model and deeply nested documents are 
 
 APOC (Awesome Procedures On Cypher) is Neo4j's standard extension library and a subset of APOC Core is pre-installed on Aura. It provides `apoc.convert.fromJsonMap()` to parse a JSON string into a Cypher map, `apoc.convert.toJson()` to serialize a map back to a string and `apoc.map.removeKey()` to delete a field from a map without touching the rest.
 
-## When Would You Reach for It?
+## When would you reach for it?
 
 Document-style properties earn their place when your nodes need to carry structured metadata that varies across instances and that metadata doesn't need to be independently indexed or traversed as graph structure. The key question is whether you need to query inside the property or just store and retrieve it as a unit.
 
@@ -21,11 +21,11 @@ Reach for this pattern when:
 
 Libraries, product catalogs and content management systems are all cases where some nodes carry rich, variable metadata alongside graph-structured relationships to other entities.
 
-## The Use Case
+## The use case
 
 For this chapter we'll build a small library inventory system with three item types -- books, journals and multimedia -- each carrying a different metadata structure in the same `metadata` property on `Item` nodes. We demonstrate how to query across the three types using APOC, how to traverse the graph to join items with their authors and publishers and how to add and remove fields from stored metadata without re-specifying the whole object.
 
-## The Data
+## The data
 
 The inventory is small by design -- 15 items, 3 authors and 3 publishers. The point is to show the metadata pattern clearly, not to load data at scale.
 
@@ -44,13 +44,13 @@ The graph model is:
 (:Author    {id, name, nationality})-[:AUTHORED]->(:Item)
 ```
 
-## Building the Application
+## Building the application
 
 ### Prerequisites
 
 You'll need a Neo4j Aura free-tier instance with the connection details stored as environment variables.
 
-### Storing Metadata
+### Storing metadata
 
 The `metadata` property is stored as a JSON string. In Python, we serialize with `json.dumps()` before passing to Neo4j:
 
@@ -109,7 +109,7 @@ session.run("""
 
 After this step the relationship, not the JSON key, is what queries should follow.
 
-### APOC: Parsing Metadata in Cypher
+### APOC: Parsing metadata in Cypher
 
 `apoc.convert.fromJsonMap()` parses the JSON string back into a Cypher map at query time. Once parsed, you access fields with dot notation and use standard Cypher operators on them:
 
@@ -129,11 +129,11 @@ result = session.run("""
 
 The `WITH i, apoc.convert.fromJsonMap(i.metadata) AS meta` line is the key pattern. It deserializes the JSON string into a map named `meta`, which then behaves like any Cypher map for the rest of the query.
 
-### Query 1: Books -- Flat Metadata
+### Query 1: Books -- flat metadata
 
 Books have flat metadata -- every field is a scalar. `meta.isbn`, `meta.pages` and `meta.language` work as direct property accessors once the JSON is parsed.
 
-### Query 2: Journals -- Metadata with a List
+### Query 2: Journals -- metadata with a list
 
 Journals have an `articles` list inside the metadata. Cypher's `size()` function counts the elements:
 
@@ -152,7 +152,7 @@ result = session.run("""
 """)
 ```
 
-### Query 3: Multimedia -- Nested Map
+### Query 3: Multimedia -- nested map
 
 Multimedia items have a `contributors` map nested inside the metadata. Returning `meta.contributors` gives you the whole nested map as a Cypher map value, which the Python driver returns as a Python dict:
 
@@ -171,7 +171,7 @@ result = session.run("""
 """)
 ```
 
-### Query 4: Books with Authors -- Graph Traversal
+### Query 4: Books with authors -- graph traversal
 
 Graph traversal and metadata access compose naturally. We follow the `AUTHORED` relationship to join books with their authors, then access the book metadata in the same query:
 
@@ -191,7 +191,7 @@ result = session.run("""
 
 This is the value proposition of the pattern: graph structure for relationships, JSON strings for variable metadata, APOC to bridge the two.
 
-### Query 5: Search Journals by Article Keyword
+### Query 5: Search journals by article keyword
 
 Cypher's `ANY()` function iterates over a list and returns true if any element satisfies a predicate. We use it to search for journals containing a keyword in any article title:
 
@@ -212,7 +212,7 @@ result = session.run("""
 
 The list comprehension `[article IN meta.articles WHERE article CONTAINS $keyword]` returns only the matching article titles, not the full list. Both `ANY()` and list comprehensions work on deserialized APOC maps just as they work on native Cypher lists. Note that `CONTAINS` is case-sensitive, so a keyword of `AI` doesn't match `ai`.
 
-### Query 6: Adding a Field to Metadata
+### Query 6: Adding a field to metadata
 
 To add a key to the stored metadata, parse the JSON string, extend the map using a Cypher map projection, then serialize back:
 
@@ -226,7 +226,7 @@ session.run("""
 
 The `meta {.*, edition: 'Second'}` map projection creates a new map containing all existing keys (`.*`) plus the new `edition` key. `apoc.convert.toJson()` serializes it back to a string. The original `metadata` property is replaced with the updated JSON string.
 
-### Query 7: Removing a Field from Metadata
+### Query 7: Removing a field from metadata
 
 To remove a key, use `apoc.map.removeKey()`:
 
@@ -242,7 +242,7 @@ session.run("""
 
 Queries 6 and 7 change the stored data. Afterward, `The Quantum Garden` has an `edition` key and no `language`, which is why the app shows N/A for its language. Re-running the notebook starts from a clean database and resets it.
 
-### The Streamlit App
+### The Streamlit app
 
 The app is a single-screen layout with a sidebar. The sidebar has a type filter (All, Book, Journal, Multimedia), a keyword search input and a bar chart showing the count of items by type. The main area displays matching items as cards, with a type badge, title, publisher and type-specific metadata rendered by a `render_metadata()` function that handles each item type separately:
 
@@ -252,7 +252,7 @@ The app is a single-screen layout with a sidebar. The sidebar has a type filter 
 
 The keyword search runs client-side against the already-loaded item data, searching across titles, author names, metadata fields (language, format, editor, ISBN) and article titles for journals. The search is case-insensitive, unlike the Cypher `CONTAINS` in Query 5.
 
-## What You'd Hit in Production
+## What you'd hit in production
 
 **The JSON string round-trip.** Every query that needs to access metadata fields must call `apoc.convert.fromJsonMap()`. For read-heavy workloads this adds a small parsing overhead on every query. For most use cases it's imperceptible, but for very high-throughput queries you'd want to benchmark it.
 
@@ -264,7 +264,7 @@ The keyword search runs client-side against the already-loaded item data, search
 
 **Nested map depth.** The multimedia `contributors` map is one level deep inside the `metadata` map -- two levels total. You can go deeper, but each additional level of nesting makes the Cypher harder to write and the mutations more complex. Keep nesting shallow where possible.
 
-## Going Further
+## Going further
 
 Document-style properties let nodes carry rich, structured metadata without requiring that metadata to have its own place in the graph. The book's edition details, the journal's article list and the multimedia item's contributors all live as JSON strings on the `Item` node, parsed by APOC when needed.
 
