@@ -1,4 +1,4 @@
-# Chapter 2: Full-text search
+# Chapter 2: Full-Text Search
 
 ## What is it?
 

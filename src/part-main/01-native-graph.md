@@ -1,4 +1,4 @@
-# Chapter 1: Native graph
+# Chapter 1: Native Graph
 
 ## What is it?
 

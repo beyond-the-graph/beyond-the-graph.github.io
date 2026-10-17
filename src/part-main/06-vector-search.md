@@ -1,4 +1,4 @@
-# Chapter 6: Vector search
+# Chapter 6: Vector Search
 
 ## What is it?
 

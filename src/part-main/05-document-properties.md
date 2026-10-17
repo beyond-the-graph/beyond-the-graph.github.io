@@ -1,4 +1,4 @@
-# Chapter 5: Document-style properties
+# Chapter 5: Document-Style Properties
 
 ## What is it?
 

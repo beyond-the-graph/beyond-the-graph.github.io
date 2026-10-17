@@ -1,4 +1,4 @@
-# Chapter 7: Graph + vector
+# Chapter 7: Graph + Vector
 
 ## What is it?
 
